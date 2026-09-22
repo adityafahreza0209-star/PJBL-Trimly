@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>@yield('title', 'Super Admin Portal - Trimly OS')</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,9 +40,9 @@
             </nav>
         </div>
         <div class="py-6 flex justify-center w-full">
-            <a href="{{ url('/') }}" class="relative group w-9 h-9 rounded-full bg-white text-primary grid place-items-center font-sans font-bold text-base no-underline transition-all hover:ring-2 hover:ring-white/20 hover:scale-105">S
-                <span class="absolute opacity-0 group-hover:opacity-100 bg-primary text-white text-xs px-2 py-1 rounded shadow-lg left-14 transition-opacity z-50 whitespace-nowrap pointer-events-none">Account</span>
-            </a>
+            <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-logout-modal'))" class="relative group w-9 h-9 rounded-full bg-white text-primary grid place-items-center font-sans font-bold text-base no-underline transition-all hover:ring-2 hover:ring-white/20 hover:scale-105 border-0 cursor-pointer">S
+                    <span class="absolute opacity-0 group-hover:opacity-100 bg-primary text-white text-xs px-2 py-1 rounded shadow-lg left-14 transition-opacity z-50 whitespace-nowrap pointer-events-none">Sign Out</span>
+                </button>
         </div>
     </aside>
 
@@ -66,5 +67,6 @@
 
   @stack('modals')
   @stack('scripts')
+  @include('partials.logout-modal')
 </body>
 </html>

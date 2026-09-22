@@ -29,12 +29,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Profile Header Edit Profile Modal Trigger
   const profileHeader = document.getElementById('profileHeader');
-  profileHeader.addEventListener('click', (e) => {
-    // Open modal if they click anywhere on header (except toggle)
-    if (!e.target.closest('#dutyToggleBtn')) {
-      openModal('modalEditProfile');
-    }
-  });
+  if (profileHeader) {
+    profileHeader.addEventListener('click', (e) => {
+      // Open modal if they click anywhere on header (except toggle)
+      if (!e.target.closest('#dutyToggleBtn')) {
+        openModal('modalEditProfile');
+      }
+    });
+  }
   
   // Specific Pencil Button trigger
   const btnEditProfileIcon = document.getElementById('btnEditProfileIcon');
@@ -47,21 +49,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Leave Request FAB Trigger
   const btnRequestLeave = document.getElementById('btnRequestLeave');
-  btnRequestLeave.addEventListener('click', () => {
-    openModal('modalLeaveRequest');
-  });
+  if (btnRequestLeave) {
+    btnRequestLeave.addEventListener('click', () => {
+      openModal('modalLeaveRequest');
+    });
+  }
+
+  // Client-side Leave Date Validation sync
+  const leaveStartDate = document.getElementById('leaveStartDate');
+  const leaveEndDate = document.getElementById('leaveEndDate');
+  if (leaveStartDate && leaveEndDate) {
+    leaveStartDate.addEventListener('change', () => {
+      if (leaveStartDate.value) {
+        leaveEndDate.min = leaveStartDate.value;
+        if (leaveEndDate.value && leaveEndDate.value < leaveStartDate.value) {
+          leaveEndDate.value = leaveStartDate.value;
+        }
+      }
+    });
+  }
 });
 
 // Modal Utilities
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
-  if (modal) modal.classList.add('active');
+  if (modal) {
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    modal.classList.add('active', 'opacity-100', 'pointer-events-auto');
+  }
 }
 
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
-  if (modal) modal.classList.remove('active');
+  if (modal) {
+    modal.classList.remove('active', 'opacity-100', 'pointer-events-auto');
+    modal.classList.add('opacity-0', 'pointer-events-none');
+  }
 }
+
+window.openModal = openModal;
+window.closeModal = closeModal;
 
 // Drawer & Roster Logic
 let currentCard = null;
@@ -106,12 +133,30 @@ function openAppointmentDrawer(clientName, time, service, status, el) {
   }
 
   const drawer = document.getElementById('bottomDrawerAppointment');
-  if (drawer) drawer.classList.add('active');
+  if (drawer) {
+    drawer.classList.remove('opacity-0', 'pointer-events-none');
+    drawer.classList.add('active', 'opacity-100', 'pointer-events-auto');
+    const panel = drawer.querySelector('.transform');
+    if (panel) {
+      panel.classList.remove('translate-y-full');
+      panel.classList.add('translate-y-0');
+    }
+  }
 }
 
 function closeDrawer(drawerId) {
   const drawer = document.getElementById(drawerId);
-  if (drawer) drawer.classList.remove('active');
+  if (drawer) {
+    const panel = drawer.querySelector('.transform');
+    if (panel) {
+      panel.classList.remove('translate-y-0');
+      panel.classList.add('translate-y-full');
+    }
+    setTimeout(() => {
+      drawer.classList.remove('active', 'opacity-100', 'pointer-events-auto');
+      drawer.classList.add('opacity-0', 'pointer-events-none');
+    }, 200);
+  }
 }
 
 function markInChair() {
@@ -155,8 +200,8 @@ function addSkill() {
   if (val) {
     const container = document.getElementById('skillTagsContainer');
     const span = document.createElement('span');
-    span.className = 'skill-tag';
-    span.innerHTML = `${val} <button class="remove-tag" onclick="removeTag(this)" aria-label="Remove tag">✕</button>`;
+    span.className = 'skill-tag inline-flex items-center px-2.5 py-1 bg-gray-100 rounded-full text-xs font-semibold text-primary border border-gray-200';
+    span.innerHTML = `${val} <button class="remove-tag ml-1 text-gray-500 hover:text-primary" onclick="removeTag(this)" aria-label="Remove tag">✕</button>`;
     container.appendChild(span);
     input.value = '';
   }
@@ -173,8 +218,118 @@ function removeTag(btn) {
   btn.parentElement.remove();
 }
 
-function saveProfile() {
-  // Simulate saving bio & skills
-  console.log('Profile saved');
-  closeModal('modalEditProfile');
+async function saveProfile() {
+  const bioInput = document.getElementById('editBioInput');
+  const bio = bioInput ? bioInput.value.trim() : '';
+
+  const skills = Array.from(document.querySelectorAll('#skillTagsContainer .skill-tag'))
+    .map(tag => tag.childNodes[0] ? tag.childNodes[0].textContent.trim() : '')
+    .filter(skill => skill.length > 0);
+
+  const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+  const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+  try {
+    const response = await fetch('/capster/profile', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': csrfToken
+      },
+      body: JSON.stringify({
+        bio: bio,
+        skills: skills
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && (data.status === 'success' || data.success)) {
+      closeModal('modalEditProfile');
+      window.location.reload();
+    } else {
+      const errorMsg = data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Gagal memperbarui profil.');
+      alert(errorMsg);
+    }
+  } catch (err) {
+    console.error('Error saving profile:', err);
+    alert('Terjadi kesalahan saat menyimpan profil. Silakan coba lagi.');
+  }
 }
+
+async function submitLeaveRequest() {
+  const leaveStartDate = document.getElementById('leaveStartDate');
+  const leaveEndDate = document.getElementById('leaveEndDate');
+  const leaveCategory = document.getElementById('leaveCategory');
+  const leaveReason = document.getElementById('leaveReason');
+  const btnSubmit = document.getElementById('btnSubmitLeaveRequest');
+
+  const startDateVal = leaveStartDate ? leaveStartDate.value.trim() : '';
+  const endDateVal = leaveEndDate ? leaveEndDate.value.trim() : '';
+  const categoryVal = leaveCategory ? leaveCategory.value.trim() : '';
+  const reasonVal = leaveReason ? leaveReason.value.trim() : '';
+
+  if (!startDateVal || !endDateVal || !categoryVal) {
+    alert('Harap lengkapi tanggal mulai, tanggal selesai, dan kategori izin terlebih dahulu.');
+    return;
+  }
+
+  if (endDateVal < startDateVal) {
+    alert('Tanggal selesai tidak boleh sebelum tanggal mulai.');
+    return;
+  }
+
+  const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+  const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+  if (btnSubmit) btnSubmit.disabled = true;
+
+  try {
+    const response = await fetch('/capster/leave-request', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': csrfToken
+      },
+      body: JSON.stringify({
+        start_date: startDateVal,
+        end_date: endDateVal,
+        category: categoryVal,
+        reason: reasonVal
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && (data.status === 'success' || data.success)) {
+      alert('Pengajuan cuti berhasil dikirim, menunggu persetujuan admin');
+      if (leaveStartDate) leaveStartDate.value = '';
+      if (leaveEndDate) leaveEndDate.value = '';
+      if (leaveCategory) leaveCategory.value = '';
+      if (leaveReason) leaveReason.value = '';
+      closeModal('modalLeaveRequest');
+    } else {
+      const errorMsg = data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Gagal mengirim pengajuan cuti.');
+      alert(errorMsg);
+    }
+  } catch (err) {
+    console.error('Error submitting leave request:', err);
+    alert('Terjadi kesalahan saat mengirim pengajuan cuti. Silakan coba lagi.');
+  } finally {
+    if (btnSubmit) btnSubmit.disabled = false;
+  }
+}
+
+// Global window bindings for inline HTML onclick handlers
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.openAppointmentDrawer = openAppointmentDrawer;
+window.closeDrawer = closeDrawer;
+window.addSkill = addSkill;
+window.removeTag = removeTag;
+window.saveProfile = saveProfile;
+window.submitLeaveRequest = submitLeaveRequest;
+
+

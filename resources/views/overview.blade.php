@@ -62,22 +62,18 @@
         </div>
         <div class="flex items-center gap-4 mt-4 sm:mt-0">
           <div class="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg cursor-pointer hover:bg-slate-200 transition-colors">
-            <span class="font-semibold text-sm text-slate-700">September 2026</span>
+            <span class="font-semibold text-sm text-slate-700">{{ now()->format('F Y') }}</span>
             <span class="text-xs text-slate-500">▾</span>
           </div>
           <x-button-outline>Download Report</x-button-outline>
         </div>
       </header>
 
-      @php
-          $status_langganan = 'trial'; // mock: 'trial' or 'aktif'
-          $days_left = 14;
-      @endphp
-      @if($status_langganan === 'trial')
+      @if($subscriptionStatus === 'trial')
       <div class="bg-amber-50 border-b border-amber-100 px-6 lg:px-8 py-2.5 flex items-center justify-between">
         <div class="flex items-center gap-2 text-sm text-amber-800 font-medium">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          <span>{{ $days_left }} days left in your free trial</span>
+          <span>{{ $daysLeft }} days left in your free trial</span>
         </div>
         <a href="{{ url('admin-settings') }}" class="text-xs font-bold bg-amber-500 text-white px-3 py-1.5 rounded-md hover:bg-amber-600 transition-colors cursor-pointer no-underline shadow-sm">Upgrade Now</a>
       </div>
@@ -89,26 +85,58 @@
           <x-card class="p-6 bg-white shadow-sm border border-border-light relative overflow-hidden">
             <svg class="absolute top-6 right-6 w-10 h-10 text-slate-200 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
             <div class="text-[11px] font-bold uppercase tracking-[0.05em] text-slate-500 mb-2 relative">Gross Revenue</div>
-            <div class="text-[28px] font-bold text-slate-900 mb-2 relative leading-tight">Rp 34.500.000</div>
-            <div class="text-xs font-medium text-emerald-600 flex items-center gap-1 relative">↑ 12.5% <span class="text-slate-500 font-normal">vs last month</span></div>
+            <div class="text-[28px] font-bold text-slate-900 mb-2 relative leading-tight">Rp {{ number_format($grossRevenue, 0, ',', '.') }}</div>
+            @if($revenueChangePercent !== null && $revenueChangePercent > 0)
+              <div class="text-xs font-medium text-emerald-600 flex items-center gap-1 relative">&uarr; {{ $revenueChangePercent }}% <span class="text-slate-500 font-normal">vs last month</span></div>
+            @elseif($revenueChangePercent !== null && $revenueChangePercent < 0)
+              <div class="text-xs font-medium text-rose-600 flex items-center gap-1 relative">&darr; {{ abs($revenueChangePercent) }}% <span class="text-slate-500 font-normal">vs last month</span></div>
+            @elseif($revenueChangePercent !== null && $revenueChangePercent == 0)
+              <div class="text-xs font-medium text-slate-500 flex items-center gap-1 relative">0% <span class="text-slate-500 font-normal">vs last month</span></div>
+            @else
+              <div class="text-xs font-normal text-slate-500 relative">vs last month</div>
+            @endif
           </x-card>
           <x-card class="p-6 bg-white shadow-sm border border-border-light relative overflow-hidden">
             <svg class="absolute top-6 right-6 w-10 h-10 text-slate-200 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             <div class="text-[11px] font-bold uppercase tracking-[0.05em] text-slate-500 mb-2 relative">Total Bookings</div>
-            <div class="text-[28px] font-bold text-slate-900 mb-2 relative leading-tight">284</div>
-            <div class="text-xs font-medium text-emerald-600 flex items-center gap-1 relative">↑ 5.2% <span class="text-slate-500 font-normal">vs last month</span></div>
+            <div class="text-[28px] font-bold text-slate-900 mb-2 relative leading-tight">{{ number_format($totalBookings, 0, ',', '.') }}</div>
+            @if($bookingsChangePercent !== null && $bookingsChangePercent > 0)
+              <div class="text-xs font-medium text-emerald-600 flex items-center gap-1 relative">&uarr; {{ $bookingsChangePercent }}% <span class="text-slate-500 font-normal">vs last month</span></div>
+            @elseif($bookingsChangePercent !== null && $bookingsChangePercent < 0)
+              <div class="text-xs font-medium text-rose-600 flex items-center gap-1 relative">&darr; {{ abs($bookingsChangePercent) }}% <span class="text-slate-500 font-normal">vs last month</span></div>
+            @elseif($bookingsChangePercent !== null && $bookingsChangePercent == 0)
+              <div class="text-xs font-medium text-slate-500 flex items-center gap-1 relative">0% <span class="text-slate-500 font-normal">vs last month</span></div>
+            @else
+              <div class="text-xs font-normal text-slate-500 relative">vs last month</div>
+            @endif
           </x-card>
           <x-card class="p-6 bg-white shadow-sm border border-border-light relative overflow-hidden">
             <svg class="absolute top-6 right-6 w-10 h-10 text-slate-200 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
             <div class="text-[11px] font-bold uppercase tracking-[0.05em] text-slate-500 mb-2 relative">Average Ticket Size</div>
-            <div class="text-[28px] font-bold text-slate-900 mb-2 relative leading-tight">Rp 121.478</div>
-            <div class="text-xs font-medium text-rose-600 flex items-center gap-1 relative">↓ 1.4% <span class="text-slate-500 font-normal">vs last month</span></div>
+            <div class="text-[28px] font-bold text-slate-900 mb-2 relative leading-tight">Rp {{ number_format($avgTicketSize, 0, ',', '.') }}</div>
+            @if($avgTicketChangePercent !== null && $avgTicketChangePercent > 0)
+              <div class="text-xs font-medium text-emerald-600 flex items-center gap-1 relative">&uarr; {{ $avgTicketChangePercent }}% <span class="text-slate-500 font-normal">vs last month</span></div>
+            @elseif($avgTicketChangePercent !== null && $avgTicketChangePercent < 0)
+              <div class="text-xs font-medium text-rose-600 flex items-center gap-1 relative">&darr; {{ abs($avgTicketChangePercent) }}% <span class="text-slate-500 font-normal">vs last month</span></div>
+            @elseif($avgTicketChangePercent !== null && $avgTicketChangePercent == 0)
+              <div class="text-xs font-medium text-slate-500 flex items-center gap-1 relative">0% <span class="text-slate-500 font-normal">vs last month</span></div>
+            @else
+              <div class="text-xs font-normal text-slate-500 relative">vs last month</div>
+            @endif
           </x-card>
           <x-card class="p-6 bg-white shadow-sm border border-border-light relative overflow-hidden">
             <svg class="absolute top-6 right-6 w-10 h-10 text-slate-200 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
             <div class="text-[11px] font-bold uppercase tracking-[0.05em] text-slate-500 mb-2 relative">New Customers</div>
-            <div class="text-[28px] font-bold text-slate-900 mb-2 relative leading-tight">62</div>
-            <div class="text-xs font-medium text-emerald-600 flex items-center gap-1 relative">↑ 18.0% <span class="text-slate-500 font-normal">vs last month</span></div>
+            <div class="text-[28px] font-bold text-slate-900 mb-2 relative leading-tight">{{ number_format($newCustomers, 0, ',', '.') }}</div>
+            @if($newCustomersChangePercent !== null && $newCustomersChangePercent > 0)
+              <div class="text-xs font-medium text-emerald-600 flex items-center gap-1 relative">&uarr; {{ $newCustomersChangePercent }}% <span class="text-slate-500 font-normal">vs last month</span></div>
+            @elseif($newCustomersChangePercent !== null && $newCustomersChangePercent < 0)
+              <div class="text-xs font-medium text-rose-600 flex items-center gap-1 relative">&darr; {{ abs($newCustomersChangePercent) }}% <span class="text-slate-500 font-normal">vs last month</span></div>
+            @elseif($newCustomersChangePercent !== null && $newCustomersChangePercent == 0)
+              <div class="text-xs font-medium text-slate-500 flex items-center gap-1 relative">0% <span class="text-slate-500 font-normal">vs last month</span></div>
+            @else
+              <div class="text-xs font-normal text-slate-500 relative">vs last month</div>
+            @endif
           </x-card>
         </section>
 
@@ -128,7 +156,9 @@
                 <!-- Premium CSS Bar Chart -->
                 <div class="w-full h-full flex relative">
                   <div class="flex flex-col justify-between h-full text-xs text-slate-500 font-medium pr-4 w-12 border-r border-border-light">
-                    <span>15M</span><span>10M</span><span>5M</span><span>0</span>
+                    @foreach($chartScales as $scaleLabel)
+                      <span>{{ $scaleLabel }}</span>
+                    @endforeach
                   </div>
                   <div class="flex-1 flex items-end justify-around h-full relative pl-4 pb-6">
                     <div class="absolute inset-0 pl-4 flex flex-col justify-between pointer-events-none">
@@ -137,22 +167,21 @@
                       <i class="w-full border-t border-slate-100"></i>
                       <i class="w-full border-t border-slate-200"></i>
                     </div>
-                    <div class="relative w-12 md:w-16 h-full flex items-end group">
-                      <div class="w-full bg-slate-200 rounded-t-sm transition-all duration-300 group-hover:bg-accent/50" style="height: 60%;"></div>
-                      <span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">W1</span>
-                    </div>
-                    <div class="relative w-12 md:w-16 h-full flex items-end group">
-                      <div class="w-full bg-slate-200 rounded-t-sm transition-all duration-300 group-hover:bg-accent/50" style="height: 45%;"></div>
-                      <span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">W2</span>
-                    </div>
-                    <div class="relative w-12 md:w-16 h-full flex items-end group">
-                      <div class="w-full bg-slate-200 rounded-t-sm transition-all duration-300 group-hover:bg-accent/50" style="height: 80%;"></div>
-                      <span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">W3</span>
-                    </div>
-                    <div class="relative w-12 md:w-16 h-full flex items-end group">
-                      <div class="w-full bg-accent rounded-t-sm shadow-md" style="height: 95%;"></div>
-                      <span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-bold text-accent">W4</span>
-                    </div>
+                    @foreach($weeklyRevenue as $label => $val)
+                      @php
+                        $isHighest = ($weeklyRevenueMax > 0 && $val === $weeklyRevenueMax);
+                        $barHeight = $weeklyHeights[$label] ?? 5;
+                      @endphp
+                      <div class="relative w-12 md:w-16 h-full flex items-end group" title="{{ $label }}: Rp {{ number_format($val, 0, ',', '.') }}">
+                        @if($isHighest)
+                          <div class="w-full bg-accent rounded-t-sm shadow-md transition-all duration-300" style="height: {{ $barHeight }}%;"></div>
+                          <span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-bold text-accent">{{ $label }}</span>
+                        @else
+                          <div class="w-full bg-slate-200 rounded-t-sm transition-all duration-300 group-hover:bg-accent/50" style="height: {{ $barHeight }}%;"></div>
+                          <span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-medium">{{ $label }}</span>
+                        @endif
+                      </div>
+                    @endforeach
                   </div>
                 </div>
               </div>
@@ -163,45 +192,29 @@
                 <h2 class="text-[18px] font-semibold text-slate-900">Capster Performance</h2>
               </div>
               <div class="divide-y divide-border-light">
-                <div class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors">
-                  <div class="w-10 h-10 rounded-full bg-amber-700 text-white flex items-center justify-center font-bold text-sm shrink-0">FP</div>
-                  <div class="flex-1 min-w-0">
-                    <h4 class="text-sm font-semibold text-slate-900">Fajar Pratama</h4>
-                    <p class="text-xs text-slate-500">112 Cuts</p>
-                  </div>
-                  <div class="w-1/3 min-w-[120px]">
-                    <div class="text-sm font-semibold text-slate-900 text-right mb-1">Rp 14.800.000</div>
-                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div class="h-full bg-accent rounded-full" style="width: 100%;"></div>
+                @forelse($topCapsters as $index => $capster)
+                  @php
+                    $colors = ['bg-amber-700', 'bg-emerald-600', 'bg-slate-500'];
+                    $color = $colors[$index % count($colors)];
+                  @endphp
+                  <div class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors">
+                    <div class="w-10 h-10 rounded-full {{ $color }} text-white flex items-center justify-center font-bold text-sm shrink-0">{{ $capster['initials'] }}</div>
+                    <div class="flex-1 min-w-0">
+                      <h4 class="text-sm font-semibold text-slate-900">{{ $capster['name'] }}</h4>
+                      <p class="text-xs text-slate-500">{{ $capster['cuts'] }} Cuts</p>
+                    </div>
+                    <div class="w-1/3 min-w-[120px]">
+                      <div class="text-sm font-semibold text-slate-900 text-right mb-1">Rp {{ number_format($capster['revenue'], 0, ',', '.') }}</div>
+                      <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-accent rounded-full" style="width: {{ $capster['bar_percent'] }}%;"></div>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors">
-                  <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shrink-0">RK</div>
-                  <div class="flex-1 min-w-0">
-                    <h4 class="text-sm font-semibold text-slate-900">Rendra Kusuma</h4>
-                    <p class="text-xs text-slate-500">94 Cuts</p>
+                @empty
+                  <div class="px-6 py-8 text-center text-sm text-slate-500">
+                    Belum ada data kinerja capster bulan ini.
                   </div>
-                  <div class="w-1/3 min-w-[120px]">
-                    <div class="text-sm font-semibold text-slate-900 text-right mb-1">Rp 11.250.000</div>
-                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div class="h-full bg-accent rounded-full opacity-90" style="width: 76%;"></div>
-                    </div>
-                  </div>
-                </div>
-                <div class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors">
-                  <div class="w-10 h-10 rounded-full bg-slate-500 text-white flex items-center justify-center font-bold text-sm shrink-0">AD</div>
-                  <div class="flex-1 min-w-0">
-                    <h4 class="text-sm font-semibold text-slate-900">Aditya</h4>
-                    <p class="text-xs text-slate-500">78 Cuts</p>
-                  </div>
-                  <div class="w-1/3 min-w-[120px]">
-                    <div class="text-sm font-semibold text-slate-900 text-right mb-1">Rp 8.450.000</div>
-                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div class="h-full bg-accent rounded-full opacity-70" style="width: 57%;"></div>
-                    </div>
-                  </div>
-                </div>
+                @endforelse
               </div>
             </x-card>
           </div>
@@ -214,34 +227,21 @@
               </div>
               <div class="p-6">
                 <ul class="flex flex-col gap-4">
-                  <li class="flex items-center gap-4">
-                    <span class="w-8 h-8 rounded-full bg-accent/15 text-accent flex items-center justify-center font-bold text-xs shrink-0">1</span>
-                    <div class="flex-1 min-w-0">
-                      <strong class="block text-sm font-semibold text-slate-900">Gentleman's Fade</strong>
-                      <small class="block text-xs text-slate-500">145 bookings</small>
-                    </div>
-                  </li>
-                  <li class="flex items-center gap-4">
-                    <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">2</span>
-                    <div class="flex-1 min-w-0">
-                      <strong class="block text-sm font-semibold text-slate-900">Trimly Trim</strong>
-                      <small class="block text-xs text-slate-500">82 bookings</small>
-                    </div>
-                  </li>
-                  <li class="flex items-center gap-4">
-                    <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">3</span>
-                    <div class="flex-1 min-w-0">
-                      <strong class="block text-sm font-semibold text-slate-900">Classic + Wash</strong>
-                      <small class="block text-xs text-slate-500">46 bookings</small>
-                    </div>
-                  </li>
-                  <li class="flex items-center gap-4">
-                    <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">4</span>
-                    <div class="flex-1 min-w-0">
-                      <strong class="block text-sm font-semibold text-slate-900">Hot Towel Shave</strong>
-                      <small class="block text-xs text-slate-500">11 bookings</small>
-                    </div>
-                  </li>
+                  @forelse($topServices as $index => $service)
+                    <li class="flex items-center gap-4">
+                      @if($index === 0)
+                        <span class="w-8 h-8 rounded-full bg-accent/15 text-accent flex items-center justify-center font-bold text-xs shrink-0">{{ $index + 1 }}</span>
+                      @else
+                        <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">{{ $index + 1 }}</span>
+                      @endif
+                      <div class="flex-1 min-w-0">
+                        <strong class="block text-sm font-semibold text-slate-900">{{ $service['name'] }}</strong>
+                        <small class="block text-xs text-slate-500">{{ $service['booking_count'] }} bookings</small>
+                      </div>
+                    </li>
+                  @empty
+                    <li class="text-sm text-slate-500 text-center py-4">Belum ada data layanan bulan ini.</li>
+                  @endforelse
                 </ul>
               </div>
             </x-card>

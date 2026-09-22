@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>All Bookings - Trimly</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -68,164 +69,221 @@
           <h1 class="m-0 text-[24px] font-bold text-slate-900">All Bookings</h1>
         </div>
         <div class="flex items-center gap-4">
-          
-          <x-button-outline size="normal" href="{{ url('login') }}" class="max-sm:text-xs max-sm:px-3">Sign Out</x-button-outline>
+          <x-button-outline type="button" size="normal" class="max-sm:text-xs max-sm:px-3" onclick="window.dispatchEvent(new CustomEvent('open-logout-modal'))">Sign Out</x-button-outline>
         </div>
       </header>
 
       <!-- Main Canvas -->
-      <main class="max-w-[1040px] w-full mx-auto p-6 lg:p-8" x-data="{ showActionModal: false, modalAction: '', selectedBooking: '', showDropdown: null }">
+      <main class="max-w-[1040px] w-full mx-auto p-6 lg:p-8" x-data="{
+        showActionModal: false,
+        modalAction: '',
+        selectedBooking: '',
+        cancelReason: '',
+        rescheduleDate: '',
+        rescheduleTime: '',
+        isSubmitting: false,
+        showDropdown: null,
+        openModal(action, bookingCode) {
+          this.modalAction = action;
+          this.selectedBooking = bookingCode;
+          this.cancelReason = '';
+          this.rescheduleDate = '';
+          this.rescheduleTime = '';
+          this.showDropdown = null;
+          this.showActionModal = true;
+        },
+        async submitCancel() {
+          if (this.isSubmitting) return;
+          this.isSubmitting = true;
+          try {
+            const token = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+            const res = await fetch('{{ route('book.cancel') }}', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': token
+              },
+              body: JSON.stringify({
+                booking_code: this.selectedBooking,
+                cancellation_reason: this.cancelReason || 'Dibatalkan oleh Admin'
+              })
+            });
+            const data = await res.json();
+            if (res.ok && data.status === 'success') {
+              window.location.reload();
+            } else {
+              alert(data.message || 'Gagal membatalkan booking.');
+            }
+          } catch (err) {
+            alert('Terjadi kesalahan saat membatalkan booking.');
+          } finally {
+            this.isSubmitting = false;
+          }
+        },
+        async submitReschedule() {
+          if (this.isSubmitting) return;
+          if (!this.rescheduleDate || !this.rescheduleTime) {
+            alert('Silakan tentukan tanggal dan jam baru.');
+            return;
+          }
+          this.isSubmitting = true;
+          try {
+            const token = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+            const res = await fetch('{{ route('book.reschedule') }}', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': token
+              },
+              body: JSON.stringify({
+                booking_code: this.selectedBooking,
+                booking_date: this.rescheduleDate,
+                start_time: this.rescheduleTime
+              })
+            });
+            const data = await res.json();
+            if (res.ok && data.status === 'success') {
+              window.location.reload();
+            } else {
+              alert(data.message || 'Gagal menjadwalkan ulang booking.');
+            }
+          } catch (err) {
+            alert('Terjadi kesalahan saat menjadwalkan ulang booking.');
+          } finally {
+            this.isSubmitting = false;
+          }
+        }
+      }">
         
-        <!-- Filters & Search -->
-        <div class="bg-white p-4 rounded-xl border border-border-light mb-6 flex flex-wrap gap-4 items-center justify-between">
+        <!-- Filters & Search Form -->
+        <form method="GET" action="{{ route('admin.bookings.index') }}" class="bg-white p-4 rounded-xl border border-border-light mb-6 flex flex-wrap gap-4 items-center justify-between">
           <div class="flex flex-wrap gap-4 items-center w-full sm:w-auto">
             <div class="relative w-full sm:w-64">
-              <span class="absolute left-3 top-2.5 text-slate-400"><svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
-              <input type="text" placeholder="Search name or ID..." class="w-full bg-surface border border-border-light rounded-lg pl-9 pr-3 py-2 text-[14px] text-slate-700 outline-none focus:border-primary shadow-sm">
+              <span class="absolute left-3 top-2.5 text-slate-400">
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              </span>
+              <input type="text" name="search" value="{{ request('search') }}" placeholder="Search name or ID..." class="w-full bg-surface border border-border-light rounded-lg pl-9 pr-3 py-2 text-[14px] text-slate-700 outline-none focus:border-primary shadow-sm">
             </div>
-            <input type="date" class="bg-surface border border-border-light rounded-lg px-3 py-2 text-[14px] text-slate-700 outline-none focus:border-primary shadow-sm">
-            <select class="bg-surface border border-border-light rounded-lg px-3 py-2 text-[14px] text-slate-700 outline-none focus:border-primary shadow-sm">
+            <input type="date" name="date" value="{{ request('date') }}" onchange="this.form.submit()" class="bg-surface border border-border-light rounded-lg px-3 py-2 text-[14px] text-slate-700 outline-none focus:border-primary shadow-sm">
+            <select name="status" onchange="this.form.submit()" class="bg-surface border border-border-light rounded-lg px-3 py-2 text-[14px] text-slate-700 outline-none focus:border-primary shadow-sm">
               <option value="">Status: All</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+              <option value="confirmed" {{ request('status') === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+              <option value="in_chair" {{ request('status') === 'in_chair' ? 'selected' : '' }}>In Chair</option>
+              <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
+              <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
             </select>
-            <select class="bg-surface border border-border-light rounded-lg px-3 py-2 text-[14px] text-slate-700 outline-none focus:border-primary shadow-sm">
+            <select name="capster_id" onchange="this.form.submit()" class="bg-surface border border-border-light rounded-lg px-3 py-2 text-[14px] text-slate-700 outline-none focus:border-primary shadow-sm">
               <option value="">Capster: All</option>
-              <option value="1">Fajar Pratama</option>
-              <option value="2">Rendra Kusuma</option>
+              @foreach($capsters as $capster)
+                <option value="{{ $capster->id }}" {{ request('capster_id') == $capster->id ? 'selected' : '' }}>
+                  {{ $capster->user->name ?? 'Capster #' . $capster->id }}
+                </option>
+              @endforeach
             </select>
           </div>
-        </div>
-
-        <!-- Data Table -->
-        <div class="bg-white border border-border-light rounded-2xl shadow-sm pb-10">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left whitespace-nowrap">
-              <thead class="bg-slate-50 border-b border-border-light">
-                <tr>
-                  <th class="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Booking ID</th>
-                  <th class="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Customer</th>
-                  <th class="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Service & Capster</th>
-                  <th class="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Date & Time</th>
-                  <th class="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                  <th class="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Payment</th>
-                  <th class="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-border-light text-[14px]">
-                
-                <!-- Row 1 -->
-                <tr class="hover:bg-slate-50 transition-colors">
-                  <td class="px-6 py-4 text-slate-900 font-medium">#TRM-8821</td>
-                  <td class="px-6 py-4">
-                    <div class="font-semibold text-slate-900">Budi Santoso</div>
-                    <div class="text-[12px] text-slate-500">0812-3456-7890</div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <div class="text-slate-900 font-medium">Gentleman's Fade</div>
-                    <div class="text-[12px] text-slate-500">by Fajar P.</div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <div class="text-slate-900 font-medium">Today</div>
-                    <div class="text-[12px] text-slate-500">09:15 - 10:00</div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <span class="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5">
-                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Completed
-                    </span>
-                  </td>
-                  <td class="px-6 py-4">
-                    <span class="text-[12px] font-semibold text-emerald-600">Paid</span>
-                  </td>
-                  <td class="px-6 py-4 text-right relative">
-                    <button @click="showDropdown = showDropdown === 1 ? null : 1" @click.away="showDropdown = null" class="text-slate-400 hover:text-slate-900 px-2 py-1 bg-transparent border-0 cursor-pointer">•••</button>
-                    <!-- Dropdown -->
-                    <div x-show="showDropdown === 1" x-cloak class="absolute right-6 top-10 mt-1 w-40 bg-white border border-border-light rounded-xl shadow-lg z-10 py-1 overflow-hidden text-left">
-                      <button class="w-full text-left px-4 py-2 text-[14px] text-slate-700 hover:bg-slate-50 border-0 bg-transparent cursor-pointer">View Detail</button>
-                    </div>
-                  </td>
-                </tr>
-
-                <!-- Row 2 -->
-                <tr class="hover:bg-slate-50 transition-colors">
-                  <td class="px-6 py-4 text-slate-900 font-medium">#TRM-8822</td>
-                  <td class="px-6 py-4">
-                    <div class="font-semibold text-slate-900">Andi Saputra</div>
-                    <div class="text-[12px] text-slate-500">0812-9876-5432</div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <div class="text-slate-900 font-medium">Hot Towel Shave</div>
-                    <div class="text-[12px] text-slate-500">by Rendra K.</div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <div class="text-slate-900 font-medium">Today</div>
-                    <div class="text-[12px] text-slate-500">14:00 - 14:30</div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <span class="bg-amber-100 text-amber-800 text-[11px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5">
-                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Confirmed
-                    </span>
-                  </td>
-                  <td class="px-6 py-4">
-                    <span class="text-[12px] font-semibold text-amber-600">DP Paid</span>
-                  </td>
-                  <td class="px-6 py-4 text-right relative">
-                    <button @click="showDropdown = showDropdown === 2 ? null : 2" @click.away="showDropdown = null" class="text-slate-400 hover:text-slate-900 px-2 py-1 bg-transparent border-0 cursor-pointer">•••</button>
-                    <!-- Dropdown -->
-                    <div x-show="showDropdown === 2" x-cloak class="absolute right-6 top-10 mt-1 w-40 bg-white border border-border-light rounded-xl shadow-lg z-10 py-1 overflow-hidden text-left">
-                      <button class="w-full text-left px-4 py-2 text-[14px] text-slate-700 hover:bg-slate-50 border-0 bg-transparent cursor-pointer">View Detail</button>
-                      <button @click="showActionModal = true; modalAction = 'reschedule'; selectedBooking = '#TRM-8822'; showDropdown = null" class="w-full text-left px-4 py-2 text-[14px] text-slate-700 hover:bg-slate-50 border-0 bg-transparent cursor-pointer">Reschedule</button>
-                      <button @click="showActionModal = true; modalAction = 'cancel'; selectedBooking = '#TRM-8822'; showDropdown = null" class="w-full text-left px-4 py-2 text-[14px] text-rose-600 hover:bg-rose-50 border-0 bg-transparent cursor-pointer">Cancel Booking</button>
-                    </div>
-                  </td>
-                </tr>
-                
-                <!-- Row 3 -->
-                <tr class="hover:bg-slate-50 transition-colors">
-                  <td class="px-6 py-4 text-slate-900 font-medium opacity-60">#TRM-8820</td>
-                  <td class="px-6 py-4 opacity-60">
-                    <div class="font-semibold text-slate-900">Dimas Aditya</div>
-                    <div class="text-[12px] text-slate-500">0855-1122-3344</div>
-                  </td>
-                  <td class="px-6 py-4 opacity-60">
-                    <div class="text-slate-900 font-medium">Gentleman's Fade</div>
-                    <div class="text-[12px] text-slate-500">by Fajar P.</div>
-                  </td>
-                  <td class="px-6 py-4 opacity-60">
-                    <div class="text-slate-900 font-medium">Yesterday</div>
-                    <div class="text-[12px] text-slate-500">16:00 - 16:45</div>
-                  </td>
-                  <td class="px-6 py-4 opacity-60">
-                    <span class="bg-rose-100 text-rose-800 text-[11px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5">
-                      <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Cancelled
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 opacity-60">
-                    <span class="text-[12px] font-semibold text-slate-500">Refunded</span>
-                  </td>
-                  <td class="px-6 py-4 text-right relative">
-                    <button @click="showDropdown = showDropdown === 3 ? null : 3" @click.away="showDropdown = null" class="text-slate-400 hover:text-slate-900 px-2 py-1 bg-transparent border-0 cursor-pointer">•••</button>
-                    <!-- Dropdown -->
-                    <div x-show="showDropdown === 3" x-cloak class="absolute right-6 top-10 mt-1 w-40 bg-white border border-border-light rounded-xl shadow-lg z-10 py-1 overflow-hidden text-left">
-                      <button class="w-full text-left px-4 py-2 text-[14px] text-slate-700 hover:bg-slate-50 border-0 bg-transparent cursor-pointer">View Detail</button>
-                    </div>
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
-          </div>
-          
-          <!-- Empty State (hidden normally) -->
-          <div class="hidden flex-col items-center justify-center p-12 text-center">
-            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-              <span class="text-slate-400 text-2xl"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg></span>
+          @if(request()->hasAny(['search', 'date', 'status', 'capster_id']))
+            <div>
+              <a href="{{ route('admin.bookings.index') }}" class="text-[13px] text-slate-500 hover:text-slate-800 font-medium underline">Reset Filter</a>
             </div>
-            <h3 class="text-[18px] font-semibold text-slate-900 mb-1">No bookings found</h3>
-            <p class="text-[14px] text-slate-500">Try adjusting your search or filters.</p>
-          </div>
+          @endif
+        </form>
+
+        <!-- Data Table / Empty State -->
+        <div class="bg-white border border-border-light rounded-2xl shadow-sm pb-10">
+          @if($bookings->isEmpty())
+            <!-- Empty State -->
+            <div class="flex flex-col items-center justify-center p-12 text-center">
+              <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                <span class="text-slate-400 text-2xl">
+                  <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                </span>
+              </div>
+              <h3 class="text-[18px] font-semibold text-slate-900 mb-1">No bookings found</h3>
+              <p class="text-[14px] text-slate-500">Try adjusting your search or filters.</p>
+            </div>
+          @else
+            <div class="overflow-x-auto">
+              <table class="w-full text-left whitespace-nowrap">
+                <thead class="bg-slate-50 border-b border-border-light">
+                  <tr>
+                    <th class="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Booking ID</th>
+                    <th class="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Customer</th>
+                    <th class="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Service & Capster</th>
+                    <th class="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Date & Time</th>
+                    <th class="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Payment</th>
+                    <th class="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-border-light text-[14px]">
+                  @foreach($bookings as $booking)
+                    @php
+                      $statusMap = [
+                        'pending'   => ['bg' => 'bg-slate-100', 'text' => 'text-slate-800', 'dot' => 'bg-slate-500', 'label' => 'Pending'],
+                        'confirmed' => ['bg' => 'bg-amber-100', 'text' => 'text-amber-800', 'dot' => 'bg-amber-500', 'label' => 'Confirmed'],
+                        'in_chair'  => ['bg' => 'bg-blue-100',  'text' => 'text-blue-800',  'dot' => 'bg-blue-500',  'label' => 'In Chair'],
+                        'completed' => ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-800', 'dot' => 'bg-emerald-500', 'label' => 'Completed'],
+                        'cancelled' => ['bg' => 'bg-rose-100',  'text' => 'text-rose-800',  'dot' => 'bg-rose-500',  'label' => 'Cancelled'],
+                      ];
+                      $statusInfo = $statusMap[$booking->booking_status] ?? ['bg' => 'bg-slate-100', 'text' => 'text-slate-700', 'dot' => 'bg-slate-400', 'label' => ucfirst($booking->booking_status)];
+
+                      $paymentMap = [
+                        'unpaid'   => ['class' => 'text-slate-500', 'label' => 'Unpaid'],
+                        'dp_paid'  => ['class' => 'text-amber-600', 'label' => 'DP Paid'],
+                        'paid'     => ['class' => 'text-emerald-600', 'label' => 'Paid'],
+                        'refunded' => ['class' => 'text-slate-500', 'label' => 'Refunded'],
+                      ];
+                      $paymentInfo = $paymentMap[$booking->payment_status] ?? ['class' => 'text-slate-500', 'label' => ucfirst(str_replace('_', ' ', $booking->payment_status))];
+
+                      $dateLabel = $booking->booking_date->isToday() 
+                        ? 'Today' 
+                        : ($booking->booking_date->isYesterday() ? 'Yesterday' : $booking->booking_date->format('d M Y'));
+
+                      $timeRange = \Carbon\Carbon::parse($booking->start_time)->format('H:i') . ' - ' . \Carbon\Carbon::parse($booking->end_time)->format('H:i');
+                    @endphp
+
+                    <tr class="hover:bg-slate-50 transition-colors {{ $booking->booking_status === 'cancelled' ? 'opacity-60' : '' }}">
+                      <td class="px-6 py-4 text-slate-900 font-medium">#{{ $booking->booking_code }}</td>
+                      <td class="px-6 py-4">
+                        <div class="font-semibold text-slate-900">{{ $booking->customer->name ?? 'Customer' }}</div>
+                        <div class="text-[12px] text-slate-500">{{ $booking->customer->phone_number ?? '-' }}</div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <div class="text-slate-900 font-medium">{{ $booking->service->name ?? 'Service' }}</div>
+                        <div class="text-[12px] text-slate-500">by {{ $booking->capster->user->name ?? 'Any Available' }}</div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <div class="text-slate-900 font-medium">{{ $dateLabel }}</div>
+                        <div class="text-[12px] text-slate-500">{{ $timeRange }}</div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <span class="{{ $statusInfo['bg'] }} {{ $statusInfo['text'] }} text-[11px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5">
+                          <span class="w-1.5 h-1.5 rounded-full {{ $statusInfo['dot'] }}"></span> {{ $statusInfo['label'] }}
+                        </span>
+                      </td>
+                      <td class="px-6 py-4">
+                        <span class="text-[12px] font-semibold {{ $paymentInfo['class'] }}">{{ $paymentInfo['label'] }}</span>
+                      </td>
+                      <td class="px-6 py-4 text-right relative">
+                        <button type="button" @click="showDropdown = showDropdown === {{ $booking->id }} ? null : {{ $booking->id }}" class="text-slate-400 hover:text-slate-900 px-2 py-1 bg-transparent border-0 cursor-pointer">•••</button>
+                        <!-- Dropdown -->
+                        <div x-show="showDropdown === {{ $booking->id }}" @click.away="showDropdown = null" x-cloak class="absolute right-6 top-10 mt-1 w-44 bg-white border border-border-light rounded-xl shadow-lg z-20 py-1 overflow-hidden text-left">
+                          <a href="{{ route('book.ticket', ['code' => $booking->booking_code]) }}" target="_blank" class="block w-full text-left px-4 py-2 text-[14px] text-slate-700 hover:bg-slate-50 border-0 bg-transparent cursor-pointer no-underline">View Detail</a>
+                          @if(in_array($booking->booking_status, ['pending', 'confirmed']))
+                            <button type="button" @click="openModal('reschedule', '{{ $booking->booking_code }}')" class="w-full text-left px-4 py-2 text-[14px] text-slate-700 hover:bg-slate-50 border-0 bg-transparent cursor-pointer">Reschedule</button>
+                            <button type="button" @click="openModal('cancel', '{{ $booking->booking_code }}')" class="w-full text-left px-4 py-2 text-[14px] text-rose-600 hover:bg-rose-50 border-0 bg-transparent cursor-pointer">Cancel Booking</button>
+                          @endif
+                        </div>
+                      </td>
+                    </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
+          @endif
         </div>
 
         <!-- Action Modal (Reschedule / Cancel) -->
@@ -247,20 +305,48 @@
                x-transition:leave="transition ease-in duration-150"
                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
                x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-               class="w-full max-w-[400px] bg-white rounded-2xl shadow-2xl border border-border-subtle overflow-hidden">
+               class="w-full max-w-[420px] bg-white rounded-2xl shadow-2xl border border-border-subtle overflow-hidden">
             
             <div class="p-6">
               <h2 class="m-0 font-display font-semibold text-[20px] mb-2" x-text="modalAction === 'cancel' ? 'Cancel Booking' : 'Reschedule Booking'"></h2>
-              <p class="m-0 text-[14px] text-slate-500" x-show="modalAction === 'cancel'">Are you sure you want to cancel booking <strong x-text="selectedBooking" class="text-slate-900"></strong>? This action cannot be undone and will free up the capster's slot.</p>
-              <p class="m-0 text-[14px] text-slate-500" x-show="modalAction === 'reschedule'">You are about to reschedule booking <strong x-text="selectedBooking" class="text-slate-900"></strong>. You will be redirected to the scheduler.</p>
+              
+              <!-- Cancel view -->
+              <div x-show="modalAction === 'cancel'">
+                <p class="m-0 text-[14px] text-slate-500">Are you sure you want to cancel booking <strong x-text="'#' + selectedBooking" class="text-slate-900"></strong>? This action cannot be undone and will free up the capster's slot.</p>
+                <div class="mt-4">
+                  <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-1">Cancellation Reason (Optional)</label>
+                  <input type="text" x-model="cancelReason" placeholder="e.g. Customer requested cancellation" class="w-full bg-surface border border-border-light rounded-lg px-3 py-2 text-[14px] text-slate-700 outline-none focus:border-primary shadow-sm">
+                </div>
+              </div>
+
+              <!-- Reschedule view -->
+              <div x-show="modalAction === 'reschedule'">
+                <p class="m-0 text-[14px] text-slate-500 mb-4">You are about to reschedule booking <strong x-text="'#' + selectedBooking" class="text-slate-900"></strong>. Please choose a new date and time.</p>
+                <div class="space-y-3">
+                  <div>
+                    <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-1">New Booking Date</label>
+                    <input type="date" x-model="rescheduleDate" min="{{ date('Y-m-d') }}" class="w-full bg-surface border border-border-light rounded-lg px-3 py-2 text-[14px] text-slate-700 outline-none focus:border-primary shadow-sm">
+                  </div>
+                  <div>
+                    <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-1">New Start Time (HH:MM)</label>
+                    <input type="time" x-model="rescheduleTime" class="w-full bg-surface border border-border-light rounded-lg px-3 py-2 text-[14px] text-slate-700 outline-none focus:border-primary shadow-sm">
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="flex justify-end gap-3 p-4 bg-slate-50 border-t border-border-light">
-              <button type="button" @click="showActionModal = false" class="text-[14px] font-semibold text-slate-600 bg-transparent border border-slate-300 hover:bg-slate-100 px-4 py-2 rounded-lg cursor-pointer transition-colors">Abort</button>
+              <button type="button" @click="showActionModal = false" :disabled="isSubmitting" class="text-[14px] font-semibold text-slate-600 bg-transparent border border-slate-300 hover:bg-slate-100 px-4 py-2 rounded-lg cursor-pointer transition-colors disabled:opacity-50">Abort</button>
               
-              <button type="button" x-show="modalAction === 'cancel'" @click="showActionModal = false" class="text-[14px] font-semibold text-white bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-lg cursor-pointer transition-colors shadow-sm">Yes, Cancel It</button>
+              <button type="button" x-show="modalAction === 'cancel'" @click="submitCancel()" :disabled="isSubmitting" class="text-[14px] font-semibold text-white bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-lg cursor-pointer transition-colors shadow-sm disabled:opacity-50 inline-flex items-center gap-2">
+                <span x-show="isSubmitting" class="inline-block animate-spin">&#9696;</span>
+                <span>Yes, Cancel It</span>
+              </button>
               
-              <x-button-primary size="normal" x-show="modalAction === 'reschedule'" @click="showActionModal = false" class="text-[14px] px-4 py-2">Continue</x-button-primary>
+              <button type="button" x-show="modalAction === 'reschedule'" @click="submitReschedule()" :disabled="isSubmitting" class="text-[14px] font-semibold text-white bg-primary hover:bg-primary/90 px-4 py-2 rounded-lg cursor-pointer transition-colors shadow-sm disabled:opacity-50 inline-flex items-center gap-2">
+                <span x-show="isSubmitting" class="inline-block animate-spin">&#9696;</span>
+                <span>Confirm Reschedule</span>
+              </button>
             </div>
           </div>
         </div>
@@ -268,5 +354,6 @@
       </main>
     </div>
   </div>
+  @include('partials.logout-modal')
 </body>
 </html>

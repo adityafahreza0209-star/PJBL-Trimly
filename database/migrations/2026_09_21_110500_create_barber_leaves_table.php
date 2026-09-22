@@ -1,0 +1,36 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('barber_leaves', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('capster_id')->constrained('capsters')->cascadeOnDelete();
+            $table->date('start_date');
+            $table->date('end_date');
+            $table->string('category')->nullable();
+            $table->text('reason')->nullable();
+            $table->string('status')->default('pending');
+            $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('reviewed_at')->nullable();
+            $table->boolean('has_active_booking_conflict')->default(false);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('barber_leaves');
+    }
+};

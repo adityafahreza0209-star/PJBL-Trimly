@@ -18,7 +18,6 @@
   @include('partials.header')
 
   <main class="pt-20">
-    <!-- HERO SECTION (MOKA & KASIR PINTAR INSPIRED DEPTH) -->
     <section class="relative pt-16 pb-28 lg:pt-24 lg:pb-36 overflow-hidden bg-background isolate" id="hero">
       <!-- Subtle ambient background gradients -->
       <div class="absolute top-0 right-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl pointer-events-none z-0"></div>
@@ -105,7 +104,7 @@
                 <div class="bg-primary/5 p-2.5 rounded-xl border border-primary/10">
                   <div class="flex justify-between items-center text-[0.7rem] text-primary/70 mb-0.5">
                     <span data-i18n="hero.dp_secured">Secured Midtrans DP</span>
-                    <span class="text-accent font-bold text-[10px]" data-i18n="hero.dp_locked">100% LOCKED</span>
+                    <span class="inline-flex items-center gap-1 text-accent font-bold text-[10px] font-mono" data-i18n="hero.dp_locked"><svg class="w-3 h-3 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>100% LOCKED</span>
                   </div>
                   <div class="text-base font-bold text-accent font-mono">Rp 1.450.000</div>
                   <div class="text-[10px] text-primary/60" data-i18n="hero.dp_settle">Settled directly to BCA</div>
@@ -145,13 +144,13 @@
             Trusted by 120+ Premier Barbershops & Grooming Studios
           </p>
           <span class="hidden sm:inline text-primary/30">|</span>
-          <div class="flex items-center gap-1 text-yellow-400 text-xs font-semibold">
-            <span class="flex items-center">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          <div class="flex items-center gap-1 text-amber-400 text-xs font-semibold">
+            <span class="flex items-center gap-0.5">
+              @for($s = 0; $s < 5; $s++)
+                <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+                </svg>
+              @endfor
             </span>
             <span class="text-primary/70 font-medium ml-1" data-i18n="proof.satisfaction">4.9/5 Partner Satisfaction</span>
           </div>
@@ -161,34 +160,34 @@
       <div class="max-w-[1240px] mx-auto px-6 lg:px-8 mb-16">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6">
-            <div class="flex items-center text-yellow-400 mb-4">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <div class="flex items-center gap-1 text-amber-400 mb-4">
+              @for($s = 0; $s < 5; $s++)
+                <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+                </svg>
+              @endfor
             </div>
             <div class="text-sm font-bold text-slate-900">Andi Saputra</div>
             <p class="text-sm text-slate-600 mt-4 leading-relaxed">"Sistem Midtrans DP dari Trimly benar-benar menghilangkan no-show di studio kami. Sangat direkomendasikan!"</p>
           </div>
           <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6">
-            <div class="flex items-center text-yellow-400 mb-4">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <div class="flex items-center gap-1 text-amber-400 mb-4">
+              @for($s = 0; $s < 5; $s++)
+                <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+                </svg>
+              @endfor
             </div>
             <div class="text-sm font-bold text-slate-900">Budi Santoso</div>
             <p class="text-sm text-slate-600 mt-4 leading-relaxed">"Sangat mudah diatur dan antarmuka pemesanan untuk pelanggan sangat rapi tanpa perlu install aplikasi."</p>
           </div>
           <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6">
-            <div class="flex items-center text-yellow-400 mb-4">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <div class="flex items-center gap-1 text-amber-400 mb-4">
+              @for($s = 0; $s < 5; $s++)
+                <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+                </svg>
+              @endfor
             </div>
             <div class="text-sm font-bold text-slate-900">Rizky Maulana</div>
             <p class="text-sm text-slate-600 mt-4 leading-relaxed">"Fitur matrix kapster membantu operasional kasir kami. Hanya kurang beberapa laporan custom saja."</p>
@@ -876,8 +875,12 @@
 
             <div class="lg:col-span-7 p-8 lg:p-12 space-y-6 flex flex-col justify-between h-full">
               <div class="space-y-4">
-                <div class="flex items-center gap-1 text-amber-500 text-base">
-                  <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <div class="flex items-center gap-1 text-amber-400 text-base">
+                  @for($s = 0; $s < 5; $s++)
+                    <svg class="w-5 h-5 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
+                      <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+                    </svg>
+                  @endfor
                 </div>
                 <blockquote class="font-serif text-lg lg:text-xl text-primary font-medium leading-snug">
                   "Before Trimly, we lost 4 to 6 slots every weekend because clients simply never showed up. The moment we introduced automated QRIS down payments on our Instagram bio, no-shows plummeted to zero. Our barbers operate with peace of mind knowing every chair is locked."
@@ -913,8 +916,12 @@
 
             <div class="lg:col-span-7 p-8 lg:p-12 space-y-6 flex flex-col justify-between h-full">
               <div class="space-y-4">
-                <div class="flex items-center gap-1 text-amber-500 text-base">
-                  <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <div class="flex items-center gap-1 text-amber-400 text-base">
+                  @for($s = 0; $s < 5; $s++)
+                    <svg class="w-5 h-5 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
+                      <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+                    </svg>
+                  @endfor
                 </div>
                 <blockquote class="font-serif text-lg lg:text-xl text-primary font-medium leading-snug">
                   "We used to track reservations manually through WhatsApp chats, which caused endless scheduling bottlenecks and overlapping chairs. With Trimly, clients pick their preferred barber and settle the down payment themselves. Front desk operations are 10x smoother."
@@ -950,8 +957,12 @@
 
             <div class="lg:col-span-7 p-8 lg:p-12 space-y-6 flex flex-col justify-between h-full">
               <div class="space-y-4">
-                <div class="flex items-center gap-1 text-amber-500 text-base">
-                  <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <div class="flex items-center gap-1 text-amber-400 text-base">
+                  @for($s = 0; $s < 5; $s++)
+                    <svg class="w-5 h-5 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
+                      <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+                    </svg>
+                  @endfor
                 </div>
                 <blockquote class="font-serif text-lg lg:text-xl text-primary font-medium leading-snug">
                   "Clients love how fast they can book without downloading yet another app. For us as studio managers, automated and transparent barber commission calculations are an absolute game-changer every single day."
@@ -1077,7 +1088,7 @@
           <div class="bg-white rounded-3xl p-8 lg:p-10 border-2 border-accent shadow-xl flex flex-col justify-between relative transform lg:-translate-y-2">
             <!-- Floating Most Popular Badge -->
             <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-accent text-white text-[11px] font-bold uppercase tracking-widest py-1.5 px-5 rounded-full shadow-sm flex items-center gap-1.5">
-              <span><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>
+              <span><svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg></span>
               <span data-i18n="pricing.popular">Most Popular</span>
             </div>
 

@@ -12,7 +12,7 @@
     </div>
     <div>
       <div class="text-sm text-gray-500 font-medium mb-1">Current MRR</div>
-      <div class="text-2xl font-bold font-sans text-gray-900">Rp 48.500.000</div>
+      <div class="text-2xl font-bold font-sans text-gray-900">Rp {{ number_format($currentMRR, 0, ',', '.') }}</div>
     </div>
   </x-card>
 
@@ -100,18 +100,18 @@
           </div>
           <div>
             <div class="font-bold text-slate-900">Essential Plan</div>
-            <div class="text-xs text-slate-500">Rp 289.000 / mo</div>
+            <div class="text-xs text-slate-500">Rp 239.000 / mo</div>
           </div>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-4 bg-slate-50 rounded-xl p-4">
         <div>
           <div class="text-xs text-slate-500 mb-1">Active Studios</div>
-          <div class="font-bold text-lg text-slate-900">45</div>
+          <div class="font-bold text-lg text-slate-900">{{ $essentialActiveCount }}</div>
         </div>
         <div>
           <div class="text-xs text-slate-500 mb-1">Monthly Revenue</div>
-          <div class="font-bold text-lg text-slate-900">Rp 13.0M</div>
+          <div class="font-bold text-lg text-slate-900">@if($essentialRevenue >= 1000000)Rp {{ number_format($essentialRevenue / 1000000, 1, ',', '.') }}M@elseRp {{ number_format($essentialRevenue, 0, ',', '.') }}@endif</div>
         </div>
       </div>
       
@@ -124,18 +124,18 @@
           </div>
           <div>
             <div class="font-bold text-slate-900">Architect Plan</div>
-            <div class="text-xs text-slate-500">Rp 699.000 / mo</div>
+            <div class="text-xs text-slate-500">Rp 559.000 / mo</div>
           </div>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-4 bg-slate-50 rounded-xl p-4">
         <div>
           <div class="text-xs text-slate-500 mb-1">Active Studios</div>
-          <div class="font-bold text-lg text-slate-900">51</div>
+          <div class="font-bold text-lg text-slate-900">{{ $architectActiveCount }}</div>
         </div>
         <div>
           <div class="text-xs text-slate-500 mb-1">Monthly Revenue</div>
-          <div class="font-bold text-lg text-slate-900">Rp 35.6M</div>
+          <div class="font-bold text-lg text-slate-900">@if($architectRevenue >= 1000000)Rp {{ number_format($architectRevenue / 1000000, 1, ',', '.') }}M@elseRp {{ number_format($architectRevenue, 0, ',', '.') }}@endif</div>
         </div>
       </div>
 
@@ -159,44 +159,38 @@
         </tr>
       </thead>
       <tbody class="divide-y divide-border-light">
-        <tr class="hover:bg-gray-50 transition-colors">
-          <td class="px-6 py-4">
-            <div class="font-bold text-gray-900">Studio 99</div>
-            <div class="text-sm text-gray-500">Andi Saputra</div>
-          </td>
-          <td class="px-6 py-4">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">
-              1 Day
-            </span>
-          </td>
-          <td class="px-6 py-4">
-            <x-badge class="bg-indigo-100 text-indigo-800">Architect</x-badge>
-          </td>
-          <td class="px-6 py-4 text-right">
-            <button type="button" onclick="alert('Reminder email sent!')" class="text-xs font-medium bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-md shadow-sm transition-colors">
-              Send Reminder
-            </button>
-          </td>
+      @forelse($trialsEndingSoon as $barbershop)
+        @php $daysLeft = (int) ceil(now()->floatDiffInDays($barbershop->trial_berakhir_pada, false)); @endphp
+        <tr class="hover:bg-slate-50 border-b border-border-light last:border-0 transition-colors">
+            <td class="px-6 py-4">
+                <div class="font-bold text-slate-900">{{ $barbershop->name }}</div>
+                <div class="text-sm text-slate-500">{{ $barbershop->admin->name ?? '-' }}</div>
+            </td>
+            <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $daysLeft <= 1 ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700' }}">
+                    {{ $daysLeft }} Day(s)
+                </span>
+            </td>
+            <td class="px-6 py-4">
+                @if($barbershop->paket_dipilih === 'architect')
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">Architect</span>
+                @else
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">Essential</span>
+                @endif
+            </td>
+            <td class="px-6 py-4 text-right">
+                <button type="button" onclick="alert('Reminder email sent!')" class="inline-flex items-center justify-center px-3 py-1.5 border border-border-medium rounded-lg text-sm font-semibold text-primary bg-white hover:bg-slate-50 transition-colors shadow-sm">
+                    Send Reminder
+                </button>
+            </td>
         </tr>
-        <tr class="hover:bg-gray-50 transition-colors">
-          <td class="px-6 py-4">
-            <div class="font-bold text-gray-900">Haircode JKT</div>
-            <div class="text-sm text-gray-500">Rina Melati</div>
-          </td>
-          <td class="px-6 py-4">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">
-              2 Days
-            </span>
-          </td>
-          <td class="px-6 py-4">
-            <x-badge class="bg-blue-100 text-blue-800">Essential</x-badge>
-          </td>
-          <td class="px-6 py-4 text-right">
-            <button type="button" onclick="alert('Reminder email sent!')" class="text-xs font-medium bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-md shadow-sm transition-colors">
-              Send Reminder
-            </button>
-          </td>
+      @empty
+        <tr>
+            <td colspan="4" class="px-6 py-8 text-center text-sm text-gray-500">
+                Tidak ada trial yang akan berakhir dalam 3 hari ke depan.
+            </td>
         </tr>
+      @endforelse
       </tbody>
     </table>
   </div>

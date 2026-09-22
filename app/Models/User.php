@@ -22,7 +22,30 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'phone_number',
     ];
+
+    /**
+     * Get the barbershop associated with the user.
+     */
+    public function barbershop()
+    {
+        return $this->hasOne(Barbershop::class, 'admin_user_id');
+    }
+
+    public function capster()
+    {
+        return $this->hasOne(Capster::class, 'user_id');
+    }
+
+    /**
+     * Get the bookings made by the user.
+     */
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class, 'customer_id');
+    }
 
     /**
      * The attributes that should be hidden for serialization.

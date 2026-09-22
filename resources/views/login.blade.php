@@ -63,13 +63,14 @@
         </header>
 
         <!-- Login Form -->
-        <form class="flex flex-col gap-6" id="authForm" onsubmit="event.preventDefault();">
+        <form class="flex flex-col gap-6" id="authForm" action="{{ route('login') }}" method="POST">
+          @csrf
           
           <!-- Input 1: Studio Subdomain -->
           <div class="flex flex-col gap-2">
             <x-label for="subdomain" data-i18n="login.subdomain_label" class="font-bold text-[0.85rem] text-primary">Studio Subdomain</x-label>
             <div class="flex items-center border border-border-medium rounded bg-background focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-colors duration-200">
-              <input type="text" id="subdomain" data-i18n-placeholder="login.subdomain_placeholder" class="w-full p-4 border-none shadow-none rounded-r-none bg-transparent focus:ring-0 focus:outline-none placeholder:text-primary/40 text-primary" placeholder="e.g. thenoble" required autocomplete="off" />
+              <input type="text" id="subdomain" name="subdomain" data-i18n-placeholder="login.subdomain_placeholder" class="w-full p-4 border-none shadow-none rounded-r-none bg-transparent focus:ring-0 focus:outline-none placeholder:text-primary/40 text-primary" placeholder="e.g. thenoble" autocomplete="off" />
               <span class="p-4 bg-surface text-primary/60 text-[0.95rem] border-l border-border-light rounded-r whitespace-nowrap">.trimly.com</span>
             </div>
           </div>
@@ -77,14 +78,17 @@
           <!-- Input 2: Email or WA -->
           <div class="flex flex-col gap-2">
             <x-label for="userId" data-i18n="login.user_label">Email or WhatsApp Number</x-label>
-            <x-input type="text" id="userId" data-i18n-placeholder="login.user_placeholder" placeholder="admin@studio.com or 0812..." required />
+            <x-input type="text" id="userId" name="email" value="{{ old('email') }}" data-i18n-placeholder="login.user_placeholder" placeholder="admin@studio.com or 0812..." required />
+            @error('email')
+              <span class="text-red-500 text-sm">{{ $message }}</span>
+            @enderror
           </div>
 
           <!-- Input 3: Password -->
           <div class="flex flex-col gap-2">
             <x-label for="password" data-i18n="login.password_label">Password</x-label>
             <div class="relative flex items-center">
-              <x-input type="password" id="password" class="w-full p-4 pr-12 border border-border-medium rounded bg-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors duration-200" placeholder="••••••••" required />
+              <x-input type="password" id="password" name="password" class="w-full p-4 pr-12 border border-border-medium rounded bg-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors duration-200" placeholder="••••••••" required />
               <button type="button" class="absolute right-4 text-primary/50 hover:text-primary focus:text-primary transition-colors duration-200 p-1 flex items-center justify-center focus:outline-none" id="togglePassword" aria-label="Toggle password visibility">
                 <svg id="icon-eye" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -136,22 +140,7 @@
     const iconEye = document.getElementById('icon-eye');
     const iconEyeOff = document.getElementById('icon-eye-off');
 
-    const authForm = document.getElementById('authForm');
     const userIdInput = document.getElementById('userId');
-    
-    if (authForm) {
-      authForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const userId = userIdInput.value.toLowerCase();
-        if(userId.includes('superadmin')) {
-          window.location.href = "{{ url('/superadmin') }}";
-        } else if(userId.includes('capster')) {
-          window.location.href = "{{ url('/capster') }}";
-        } else {
-          window.location.href = "{{ url('/dashboard') }}";
-        }
-      });
-    }
 
     togglePassword.addEventListener('click', () => {
       const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';

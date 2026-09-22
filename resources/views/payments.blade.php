@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Payments - Trimly</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,49 +70,134 @@
         </div>
         <div class="flex items-center gap-4">
           
-          <x-button-outline size="normal" href="{{ url('login') }}" class="max-sm:text-xs max-sm:px-3">Sign Out</x-button-outline>
+          <x-button-outline type="button" size="normal" class="max-sm:text-xs max-sm:px-3" onclick="window.dispatchEvent(new CustomEvent('open-logout-modal'))">Sign Out</x-button-outline>
         </div>
       </header>
 
       <!-- Main Canvas -->
-      <main class="max-w-[1040px] w-full mx-auto p-6 lg:p-8" x-data="{ showValidateModal: false, selectedBooking: '' }">
+      <main class="max-w-[1040px] w-full mx-auto p-6 lg:p-8" 
+            x-data="{ 
+              showValidateModal: false, 
+              selectedPaymentId: null,
+              selectedBookingLabel: '',
+              showRecordModal: false,
+              isSubmitting: false,
+              recordForm: {
+                booking_id: '',
+                payment_method: 'cash',
+                amount: ''
+              },
+              bookingsData: {{ Js::from($eligibleBookings->keyBy('id')->map(fn($b) => $b->remainingBalance())) }},
+              onBookingChange() {
+                const id = this.recordForm.booking_id;
+                if (id && this.bookingsData[id] !== undefined) {
+                  this.recordForm.amount = this.bookingsData[id];
+                } else {
+                  this.recordForm.amount = '';
+                }
+              },
+              async submitRecord() {
+                if (!this.recordForm.booking_id) {
+                  alert('Silakan pilih booking.');
+                  return;
+                }
+                if (!this.recordForm.amount || this.recordForm.amount <= 0) {
+                  alert('Nominal harus lebih dari 0.');
+                  return;
+                }
+                this.isSubmitting = true;
+                try {
+                  const res = await fetch('{{ route('admin.payments.store') }}', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Accept': 'application/json',
+                      'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                    },
+                    body: JSON.stringify(this.recordForm)
+                  });
+                  const data = await res.json();
+                  if (!res.ok) {
+                    throw new Error(data.message || 'Gagal mencatat pembayaran.');
+                  }
+                  this.showRecordModal = false;
+                  window.location.reload();
+                } catch (err) {
+                  alert(err.message);
+                } finally {
+                  this.isSubmitting = false;
+                }
+              },
+              async confirmValidate() {
+                if (!this.selectedPaymentId) return;
+                this.isSubmitting = true;
+                try {
+                  const res = await fetch(`/payments/${this.selectedPaymentId}/validate`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Accept': 'application/json',
+                      'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                    }
+                  });
+                  const data = await res.json();
+                  if (!res.ok) {
+                    throw new Error(data.message || 'Gagal memvalidasi pembayaran.');
+                  }
+                  this.showValidateModal = false;
+                  window.location.reload();
+                } catch (err) {
+                  alert(err.message);
+                } finally {
+                  this.isSubmitting = false;
+                }
+              }
+            }">
         
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           <div class="bg-white rounded-2xl border border-border-subtle p-5 shadow-sm">
             <p class="m-0 text-[11px] font-bold tracking-[0.05em] uppercase text-slate-500 mb-2">Total Pending Validation</p>
-            <div class="text-[28px] font-bold text-amber-500">Rp 450.000</div>
+            <div class="text-[28px] font-bold text-amber-500">Rp {{ number_format($totalPendingValidation, 0, ',', '.') }}</div>
           </div>
           <div class="bg-white rounded-2xl border border-border-subtle p-5 shadow-sm">
             <p class="m-0 text-[11px] font-bold tracking-[0.05em] uppercase text-slate-500 mb-2">Total Revenue Today</p>
-            <div class="text-[28px] font-bold text-slate-900">Rp 1.250.000</div>
+            <div class="text-[28px] font-bold text-slate-900">Rp {{ number_format($totalRevenueToday, 0, ',', '.') }}</div>
           </div>
         </div>
 
         <!-- Filters -->
-        <div class="bg-white p-4 rounded-xl border border-border-light mb-6 flex flex-wrap gap-4 items-center justify-between">
+        <form method="GET" action="{{ route('admin.payments.index') }}" class="bg-white p-4 rounded-xl border border-border-light mb-6 flex flex-wrap gap-4 items-center justify-between">
           <div class="flex flex-wrap gap-4 items-center">
-            <input type="date" class="bg-surface border border-border-light rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary">
-            <select class="bg-surface border border-border-light rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary">
+            <input type="date" name="date" value="{{ request('date') }}" onchange="this.form.submit()" class="bg-surface border border-border-light rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary">
+            <select name="status" onchange="this.form.submit()" class="bg-surface border border-border-light rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary">
               <option value="">Status: All</option>
-              <option value="pending">Pending</option>
-              <option value="paid">Paid</option>
-              <option value="failed">Failed</option>
+              <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+              <option value="paid" {{ request('status') === 'paid' ? 'selected' : '' }}>Paid</option>
+              <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>Failed</option>
             </select>
-            <select class="bg-surface border border-border-light rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary">
+            <select name="type" onchange="this.form.submit()" class="bg-surface border border-border-light rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary">
               <option value="">Type: All</option>
-              <option value="dp">DP (Down Payment)</option>
-              <option value="pelunasan">Pelunasan</option>
+              <option value="dp" {{ request('type') === 'dp' ? 'selected' : '' }}>DP (Down Payment)</option>
+              <option value="pelunasan" {{ request('type') === 'pelunasan' ? 'selected' : '' }}>Pelunasan</option>
             </select>
-            <select class="bg-surface border border-border-light rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary">
+            <select name="method" onchange="this.form.submit()" class="bg-surface border border-border-light rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary">
               <option value="">Method: All</option>
-              <option value="midtrans">Midtrans</option>
-              <option value="cash">Cash</option>
-              <option value="qris">QRIS Static</option>
+              <option value="midtrans" {{ request('method') === 'midtrans' ? 'selected' : '' }}>Midtrans</option>
+              <option value="cash" {{ request('method') === 'cash' ? 'selected' : '' }}>Cash</option>
+              <option value="qris_static" {{ request('method') === 'qris_static' ? 'selected' : '' }}>QRIS Static</option>
             </select>
+            @if(request()->hasAny(['date', 'status', 'type', 'method']) && (request('date') || request('status') || request('type') || request('method')))
+              <a href="{{ route('admin.payments.index') }}" class="text-xs text-slate-500 hover:text-slate-800 underline">Reset</a>
+            @endif
           </div>
-          <x-button-outline size="normal" class="text-sm shadow-sm py-2 px-4">Export CSV</x-button-outline>
-        </div>
+          <div class="flex items-center gap-3">
+            <x-button-outline type="button" size="normal" class="text-sm shadow-sm py-2 px-4">Export CSV</x-button-outline>
+            <x-button-primary type="button" size="normal" @click="showRecordModal = true" class="text-sm shadow-sm py-2 px-4">
+              + Record Payment
+            </x-button-primary>
+          </div>
+        </form>
 
         <!-- Data Table -->
         <div class="bg-white border border-border-light rounded-2xl overflow-hidden shadow-sm">
@@ -129,93 +215,75 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-border-light text-[14px]">
-                
-                <!-- Row 1 -->
-                <tr class="hover:bg-slate-50 transition-colors">
-                  <td class="px-6 py-4 text-slate-900 font-medium">#TRM-8821</td>
-                  <td class="px-6 py-4">
-                    <div class="font-semibold text-slate-900">Budi Santoso</div>
-                    <div class="text-xs text-slate-500">with Fajar P.</div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <div class="flex items-center gap-2 mb-1">
-                      <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase">DP</span>
-                    </div>
-                    <div class="text-xs text-slate-500">Midtrans</div>
-                  </td>
-                  <td class="px-6 py-4 text-right font-semibold text-slate-900">Rp 50.000</td>
-                  <td class="px-6 py-4">
-                    <span class="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5">
-                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Paid
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 text-slate-500 text-sm">Today, 09:15</td>
-                  <td class="px-6 py-4 text-center">
-                    <button class="text-slate-400 hover:text-slate-600 px-2 py-1 bg-transparent border-0 cursor-pointer">...</button>
-                  </td>
-                </tr>
-
-                <!-- Row 2 -->
-                <tr class="hover:bg-slate-50 transition-colors">
-                  <td class="px-6 py-4 text-slate-900 font-medium">#TRM-8821</td>
-                  <td class="px-6 py-4">
-                    <div class="font-semibold text-slate-900">Budi Santoso</div>
-                    <div class="text-xs text-slate-500">with Fajar P.</div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <div class="flex items-center gap-2 mb-1">
-                      <span class="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">Pelunasan</span>
-                    </div>
-                    <div class="text-xs text-slate-500">Cash</div>
-                  </td>
-                  <td class="px-6 py-4 text-right font-semibold text-slate-900">Rp 100.000</td>
-                  <td class="px-6 py-4">
-                    <span class="bg-amber-100 text-amber-800 text-[11px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5">
-                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 text-slate-500 text-sm">Today, 10:10</td>
-                  <td class="px-6 py-4 text-center">
-                    <button @click="showValidateModal = true; selectedBooking = '#TRM-8821'" class="bg-white border border-amber-300 text-amber-600 hover:bg-amber-50 font-semibold text-[12px] px-3 py-1.5 rounded-md cursor-pointer transition-colors shadow-sm">Validate</button>
-                  </td>
-                </tr>
-
-                <!-- Row 3 -->
-                <tr class="hover:bg-slate-50 transition-colors">
-                  <td class="px-6 py-4 text-slate-900 font-medium">#TRM-8822</td>
-                  <td class="px-6 py-4">
-                    <div class="font-semibold text-slate-900">Andi Saputra</div>
-                    <div class="text-xs text-slate-500">with Rendra K.</div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <div class="flex items-center gap-2 mb-1">
-                      <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Full</span>
-                    </div>
-                    <div class="text-xs text-slate-500">QRIS Static</div>
-                  </td>
-                  <td class="px-6 py-4 text-right font-semibold text-slate-900">Rp 150.000</td>
-                  <td class="px-6 py-4">
-                    <span class="bg-amber-100 text-amber-800 text-[11px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5">
-                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 text-slate-500 text-sm">Today, 10:30</td>
-                  <td class="px-6 py-4 text-center">
-                    <button @click="showValidateModal = true; selectedBooking = '#TRM-8822'" class="bg-white border border-amber-300 text-amber-600 hover:bg-amber-50 font-semibold text-[12px] px-3 py-1.5 rounded-md cursor-pointer transition-colors shadow-sm">Validate</button>
-                  </td>
-                </tr>
-
+                @forelse($payments as $payment)
+                  <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 text-slate-900 font-medium">#{{ $payment->booking->booking_code }}</td>
+                    <td class="px-6 py-4">
+                      <div class="font-semibold text-slate-900">{{ $payment->booking->customer->name ?? 'Pelanggan' }}</div>
+                      <div class="text-xs text-slate-500">with {{ $payment->booking->capster->user->name ?? 'Any Available' }}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <div class="flex items-center gap-2 mb-1">
+                        @if($payment->amount == $payment->booking->total_amount)
+                          <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Full</span>
+                        @elseif($payment->payment_type === 'dp')
+                          <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase">DP</span>
+                        @else
+                          <span class="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">Pelunasan</span>
+                        @endif
+                      </div>
+                      @php
+                        $methodName = match($payment->payment_method) {
+                            'midtrans' => 'Midtrans',
+                            'cash' => 'Cash',
+                            'qris_static' => 'QRIS Static',
+                            default => ucfirst($payment->payment_method ?? '-')
+                        };
+                      @endphp
+                      <div class="text-xs text-slate-500">{{ $methodName }}</div>
+                    </td>
+                    <td class="px-6 py-4 text-right font-semibold text-slate-900">Rp {{ number_format($payment->amount, 0, ',', '.') }}</td>
+                    <td class="px-6 py-4">
+                      @if($payment->status === 'paid')
+                        <span class="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5">
+                          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Paid
+                        </span>
+                      @elseif($payment->status === 'pending')
+                        <span class="bg-amber-100 text-amber-800 text-[11px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5">
+                          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending
+                        </span>
+                      @else
+                        <span class="bg-rose-100 text-rose-800 text-[11px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5">
+                          <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Failed
+                        </span>
+                      @endif
+                    </td>
+                    <td class="px-6 py-4 text-slate-500 text-sm">
+                      {{ $payment->created_at->isToday() ? 'Today, ' . $payment->created_at->format('H:i') : $payment->created_at->format('d M, H:i') }}
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                      @if($payment->status === 'pending')
+                        <button type="button" @click="showValidateModal = true; selectedPaymentId = {{ $payment->id }}; selectedBookingLabel = '{{ $payment->booking->booking_code }}'" class="bg-white border border-amber-300 text-amber-600 hover:bg-amber-50 font-semibold text-[12px] px-3 py-1.5 rounded-md cursor-pointer transition-colors shadow-sm">Validate</button>
+                      @else
+                        <button type="button" class="text-slate-400 hover:text-slate-600 px-2 py-1 bg-transparent border-0 cursor-pointer">...</button>
+                      @endif
+                    </td>
+                  </tr>
+                @empty
+                  <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-slate-500">
+                      <div class="flex flex-col items-center justify-center">
+                        <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3 text-slate-400">
+                          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                        </div>
+                        <h3 class="text-[16px] font-semibold text-slate-900 mb-1">No payments found</h3>
+                        <p class="text-[14px] text-slate-500 m-0">Try adjusting your filters or date range.</p>
+                      </div>
+                    </td>
+                  </tr>
+                @endforelse
               </tbody>
             </table>
-          </div>
-          
-          <!-- Empty State (hidden normally) -->
-          <div class="hidden flex-col items-center justify-center p-12 text-center">
-            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-              <span class="text-slate-400 text-2xl"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg></span>
-            </div>
-            <h3 class="text-[18px] font-semibold text-slate-900 mb-1">No payments found</h3>
-            <p class="text-[14px] text-slate-500">Try adjusting your filters or date range.</p>
           </div>
         </div>
 
@@ -230,7 +298,7 @@
              x-cloak
              class="fixed inset-0 bg-black/50 backdrop-blur-xs grid place-items-center p-5 z-50">
           
-          <div @click.away="showValidateModal = false"
+          <div @click.away="if (!isSubmitting) showValidateModal = false"
                x-show="showValidateModal"
                x-transition:enter="transition ease-out duration-200"
                x-transition:enter-start="opacity-0 scale-95 translate-y-2"
@@ -242,12 +310,90 @@
             
             <div class="p-6">
               <h2 class="m-0 font-display font-semibold text-[20px] mb-2">Confirm Payment?</h2>
-              <p class="m-0 text-[14px] text-slate-500">Are you sure you have received the payment for booking <strong x-text="selectedBooking" class="text-slate-900"></strong>? This action cannot be undone.</p>
+              <p class="m-0 text-[14px] text-slate-500">Are you sure you have received the payment for booking <strong x-text="'#' + selectedBookingLabel" class="text-slate-900"></strong>? This action cannot be undone.</p>
             </div>
 
             <div class="flex justify-end gap-3 p-4 bg-slate-50 border-t border-border-light">
-              <button type="button" @click="showValidateModal = false" class="text-[14px] font-semibold text-slate-600 bg-transparent border border-slate-300 hover:bg-slate-100 px-4 py-2 rounded-lg cursor-pointer transition-colors">Cancel</button>
-              <x-button-primary size="normal" @click="showValidateModal = false" class="text-[14px] px-4 py-2">Confirm Received</x-button-primary>
+              <button type="button" @click="showValidateModal = false" :disabled="isSubmitting" class="text-[14px] font-semibold text-slate-600 bg-transparent border border-slate-300 hover:bg-slate-100 px-4 py-2 rounded-lg cursor-pointer transition-colors">Cancel</button>
+              <x-button-primary size="normal" @click="confirmValidate()" class="text-[14px] px-4 py-2" ::disabled="isSubmitting">
+                <span x-show="!isSubmitting">Confirm Received</span>
+                <span x-show="isSubmitting" x-cloak>Processing...</span>
+              </x-button-primary>
+            </div>
+          </div>
+        </div>
+
+        <!-- Record Manual Payment Modal -->
+        <div x-show="showRecordModal" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             x-cloak
+             class="fixed inset-0 bg-black/50 backdrop-blur-xs grid place-items-center p-5 z-50">
+          
+          <div @click.away="if (!isSubmitting) showRecordModal = false"
+               x-show="showRecordModal"
+               x-transition:enter="transition ease-out duration-200"
+               x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+               x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+               x-transition:leave="transition ease-in duration-150"
+               x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+               x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+               class="w-full max-w-[480px] bg-white rounded-2xl shadow-2xl border border-border-subtle overflow-hidden">
+            
+            <div class="p-6">
+              <div class="flex items-center justify-between mb-1">
+                <h2 class="m-0 font-display font-semibold text-[20px] text-slate-900">Record Manual Payment</h2>
+                <button type="button" @click="showRecordModal = false" class="text-slate-400 hover:text-slate-600 bg-transparent border-0 cursor-pointer p-1">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <p class="m-0 text-[14px] text-slate-500 mb-6">Catat pembayaran cash atau QRIS static yang diterima langsung di studio.</p>
+
+              <form @submit.prevent="submitRecord()" class="space-y-4">
+                <div>
+                  <label class="block text-[12px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Pilih Booking</label>
+                  <select x-model="recordForm.booking_id" @change="onBookingChange()" required class="w-full bg-surface border border-border-light rounded-xl px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-primary transition-colors">
+                    <option value="">-- Pilih Booking --</option>
+                    @foreach($eligibleBookings as $b)
+                      <option value="{{ $b->id }}">
+                        #{{ $b->booking_code }} - {{ $b->customer->name ?? 'Guest' }} (Sisa: Rp {{ number_format($b->remainingBalance(), 0, ',', '.') }})
+                      </option>
+                    @endforeach
+                  </select>
+                  @if($eligibleBookings->isEmpty())
+                    <p class="text-xs text-amber-600 mt-1">Tidak ada booking aktif dengan sisa tagihan.</p>
+                  @endif
+                </div>
+
+                <div>
+                  <label class="block text-[12px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Metode Pembayaran</label>
+                  <select x-model="recordForm.payment_method" required class="w-full bg-surface border border-border-light rounded-xl px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-primary transition-colors">
+                    <option value="cash">Cash (Tunai)</option>
+                    <option value="qris_static">QRIS Static</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-[12px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Nominal (Rp)</label>
+                  <div class="relative">
+                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-semibold">Rp</span>
+                    <input type="number" x-model.number="recordForm.amount" min="1" required placeholder="0" class="w-full bg-surface border border-border-light rounded-xl pl-10 pr-3.5 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-primary transition-colors">
+                  </div>
+                  <p class="text-xs text-slate-400 mt-1">Otomatis terisi sisa tagihan, dapat diubah jika pembayaran sebagian.</p>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-border-light">
+                  <button type="button" @click="showRecordModal = false" :disabled="isSubmitting" class="text-[14px] font-semibold text-slate-600 bg-transparent border border-slate-300 hover:bg-slate-100 px-4 py-2 rounded-lg cursor-pointer transition-colors">Cancel</button>
+                  <x-button-primary type="submit" size="normal" class="text-[14px] px-5 py-2" ::disabled="isSubmitting">
+                    <span x-show="!isSubmitting">Save & Record</span>
+                    <span x-show="isSubmitting" x-cloak>Saving...</span>
+                  </x-button-primary>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -255,5 +401,6 @@
       </main>
     </div>
   </div>
+  @include('partials.logout-modal')
 </body>
 </html>

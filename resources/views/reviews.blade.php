@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Reviews - Trimly</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,7 +70,7 @@
         </div>
         <div class="flex items-center gap-4">
           
-          <x-button-outline size="normal" href="{{ url('login') }}" class="max-sm:text-xs max-sm:px-3">Sign Out</x-button-outline>
+          <x-button-outline type="button" size="normal" class="max-sm:text-xs max-sm:px-3" onclick="window.dispatchEvent(new CustomEvent('open-logout-modal'))">Sign Out</x-button-outline>
         </div>
       </header>
 
@@ -82,117 +83,107 @@
             <div class="bg-white rounded-2xl border border-border-subtle p-5 shadow-sm min-w-[160px]">
               <p class="m-0 text-[11px] font-bold tracking-[0.05em] uppercase text-slate-500 mb-1">Average Rating</p>
               <div class="flex items-end gap-2">
-                <span class="text-[32px] font-bold text-slate-900 leading-none">4.8</span>
-                <span class="text-amber-400 text-xl mb-1"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>
+                <span class="text-[32px] font-bold text-slate-900 leading-none">{{ $avgRating ?? '—' }}</span>
+                <span class="text-amber-400 text-xl mb-1"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg></span>
               </div>
             </div>
             <div class="bg-white rounded-2xl border border-border-subtle p-5 shadow-sm min-w-[160px]">
               <p class="m-0 text-[11px] font-bold tracking-[0.05em] uppercase text-slate-500 mb-1">Total Reviews</p>
-              <div class="text-[32px] font-bold text-slate-900 leading-none">124</div>
+              <div class="text-[32px] font-bold text-slate-900 leading-none">{{ $totalReviews }}</div>
             </div>
           </div>
           
-          <div class="flex gap-4 w-full sm:w-auto">
-            <select class="bg-white border border-border-light rounded-lg px-3 py-2.5 text-[14px] text-slate-700 outline-none focus:border-primary shadow-sm w-full sm:w-auto">
+          <form method="GET" action="{{ route('admin.reviews.index') }}" class="flex gap-4 w-full sm:w-auto">
+            <select name="rating" onchange="this.form.submit()" class="bg-white border border-border-light rounded-lg px-3 py-2.5 text-[14px] text-slate-700 outline-none focus:border-primary shadow-sm w-full sm:w-auto">
               <option value="">All Ratings</option>
-              <option value="5">5 Stars</option>
-              <option value="4">4 Stars</option>
-              <option value="3">3 Stars</option>
-              <option value="2">2 Stars</option>
-              <option value="1">1 Star</option>
+              <option value="5" {{ request('rating') == '5' ? 'selected' : '' }}>5 Stars</option>
+              <option value="4" {{ request('rating') == '4' ? 'selected' : '' }}>4 Stars</option>
+              <option value="3" {{ request('rating') == '3' ? 'selected' : '' }}>3 Stars</option>
+              <option value="2" {{ request('rating') == '2' ? 'selected' : '' }}>2 Stars</option>
+              <option value="1" {{ request('rating') == '1' ? 'selected' : '' }}>1 Star</option>
             </select>
-            <select class="bg-white border border-border-light rounded-lg px-3 py-2.5 text-[14px] text-slate-700 outline-none focus:border-primary shadow-sm w-full sm:w-auto">
+            <select name="capster_id" onchange="this.form.submit()" class="bg-white border border-border-light rounded-lg px-3 py-2.5 text-[14px] text-slate-700 outline-none focus:border-primary shadow-sm w-full sm:w-auto">
               <option value="">All Capsters</option>
-              <option value="1">Fajar Pratama</option>
-              <option value="2">Rendra Kusuma</option>
+              @foreach($capsters as $capster)
+                <option value="{{ $capster->id }}" {{ request('capster_id') == $capster->id ? 'selected' : '' }}>
+                  {{ $capster->user->name ?? ('Capster #' . $capster->id) }}
+                </option>
+              @endforeach
             </select>
-          </div>
+          </form>
         </div>
 
         <!-- Review List -->
         <div class="flex flex-col gap-4">
-          
-          <!-- Review Card 1 -->
-          <div class="bg-white rounded-xl border border-border-subtle p-6 shadow-sm hover:shadow-md transition-shadow relative group" x-data="{ isHidden: false }">
-            <div class="absolute top-6 right-6 flex flex-col items-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <span class="text-[12px] font-medium text-slate-500">Hide from public</span>
-                <div class="relative inline-block w-8 h-4">
-                  <input type="checkbox" class="peer sr-only" x-model="isHidden">
-                  <span class="absolute inset-0 bg-slate-200 rounded-full transition-colors peer-checked:bg-rose-500"></span>
-                  <span class="absolute left-0.5 bottom-0.5 w-3 h-3 bg-white rounded-full transition-transform peer-checked:translate-x-4 shadow-sm"></span>
-                </div>
-              </label>
-            </div>
-            
-            <div class="flex gap-4">
-              <div class="w-10 h-10 rounded-full bg-slate-200 grid place-items-center text-slate-600 font-bold shrink-0">B</div>
-              <div class="flex-1">
-                <div class="flex items-center gap-2 mb-1" :class="isHidden ? 'opacity-50' : ''">
-                  <h3 class="m-0 text-[16px] font-semibold text-slate-900">Budi Santoso</h3>
-                  <span class="text-[12px] text-slate-400">· 2 days ago</span>
-                </div>
-                <div class="flex items-center gap-1 mb-3 text-amber-400 text-[14px]" :class="isHidden ? 'opacity-50' : ''">
-                  <span><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span><span><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span><span><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span><span><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span><span><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>
-                </div>
-                <p class="m-0 text-[14px] text-slate-700 leading-relaxed max-w-3xl" :class="isHidden ? 'text-slate-400 line-through' : ''">Potongan sangat rapi dan pelayanannya mantap. Tempat juga bersih dan nyaman. Pasti bakal balik lagi.</p>
-                <div class="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2 text-[12px] text-slate-500">
-                  <span>Serviced by <strong class="text-slate-700">Fajar Pratama</strong></span>
+          @forelse($reviews as $review)
+            @php
+              $custName = $review->customer->name ?? 'Pelanggan';
+              $words = explode(' ', trim($custName));
+              $initials = '';
+              foreach(array_slice($words, 0, 2) as $w) {
+                $initials .= mb_substr($w, 0, 1);
+              }
+              $initials = strtoupper($initials ?: 'P');
+            @endphp
+            <div class="bg-white rounded-xl border border-border-subtle p-6 shadow-sm hover:shadow-md transition-shadow relative group" x-data="{ isHidden: {{ $review->is_hidden ? 'true' : 'false' }} }">
+              <div class="absolute top-6 right-6 flex flex-col items-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <span class="text-[12px] font-medium text-slate-500">Hide from public</span>
+                  <div class="relative inline-block w-8 h-4">
+                    <input type="checkbox" class="peer sr-only" :checked="isHidden"
+                      @change="fetch('/reviews/{{ $review->id }}/toggle-hidden', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(res => res.json()).then(data => { isHidden = data.is_hidden })">
+                    <span class="absolute inset-0 bg-slate-200 rounded-full transition-colors peer-checked:bg-rose-500"></span>
+                    <span class="absolute left-0.5 bottom-0.5 w-3 h-3 bg-white rounded-full transition-transform peer-checked:translate-x-4 shadow-sm"></span>
+                  </div>
+                </label>
+              </div>
+              
+              <div class="flex gap-4">
+                <div class="w-10 h-10 rounded-full bg-slate-200 grid place-items-center text-slate-600 font-bold shrink-0">{{ $initials }}</div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1" :class="isHidden ? 'opacity-50' : ''">
+                    <h3 class="m-0 text-[16px] font-semibold text-slate-900">{{ $review->customer->name ?? 'Pelanggan' }}</h3>
+                    <span class="text-[12px] text-slate-400">· {{ $review->created_at ? $review->created_at->diffForHumans() : '' }}</span>
+                  </div>
+                  <div class="flex items-center gap-1 mb-3 text-[14px]" :class="isHidden ? 'opacity-50' : ''">
+                    @for($i = 1; $i <= 5; $i++)
+                      <svg class="w-4 h-4 {{ $i <= $review->rating ? 'text-amber-400' : 'text-slate-200' }}" viewBox="0 0 24 24" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+                      </svg>
+                    @endfor
+                  </div>
+                  <p class="m-0 text-[14px] text-slate-700 leading-relaxed max-w-3xl" :class="isHidden ? 'text-slate-400 line-through' : ''">
+                    @if(!empty($review->comment))
+                      {{ $review->comment }}
+                    @else
+                      <span class="italic text-slate-400">Tidak ada komentar</span>
+                    @endif
+                  </p>
+                  <div class="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2 text-[12px] text-slate-500">
+                    <span>Serviced by <strong class="text-slate-700">{{ $review->capster->user->name ?? 'Any Available' }}</strong></span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div x-show="isHidden" x-cloak class="absolute inset-0 bg-white/60 backdrop-blur-[1px] rounded-xl pointer-events-none flex items-center justify-center">
-              <span class="bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-[12px] font-bold">HIDDEN</span>
-            </div>
-          </div>
-
-          <!-- Review Card 2 -->
-          <div class="bg-white rounded-xl border border-border-subtle p-6 shadow-sm hover:shadow-md transition-shadow relative group" x-data="{ isHidden: false }">
-            <div class="absolute top-6 right-6 flex flex-col items-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <span class="text-[12px] font-medium text-slate-500">Hide from public</span>
-                <div class="relative inline-block w-8 h-4">
-                  <input type="checkbox" class="peer sr-only" x-model="isHidden">
-                  <span class="absolute inset-0 bg-slate-200 rounded-full transition-colors peer-checked:bg-rose-500"></span>
-                  <span class="absolute left-0.5 bottom-0.5 w-3 h-3 bg-white rounded-full transition-transform peer-checked:translate-x-4 shadow-sm"></span>
-                </div>
-              </label>
-            </div>
-            
-            <div class="flex gap-4">
-              <div class="w-10 h-10 rounded-full bg-slate-200 grid place-items-center text-slate-600 font-bold shrink-0">A</div>
-              <div class="flex-1">
-                <div class="flex items-center gap-2 mb-1" :class="isHidden ? 'opacity-50' : ''">
-                  <h3 class="m-0 text-[16px] font-semibold text-slate-900">Andi Saputra</h3>
-                  <span class="text-[12px] text-slate-400">· 5 days ago</span>
-                </div>
-                <div class="flex items-center gap-1 mb-3 text-[14px]" :class="isHidden ? 'opacity-50' : ''">
-                  <span class="text-amber-400"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span><span class="text-amber-400"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span><span class="text-amber-400"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span><span class="text-slate-200"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span><span class="text-slate-200"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>
-                </div>
-                <p class="m-0 text-[14px] text-slate-700 leading-relaxed max-w-3xl" :class="isHidden ? 'text-slate-400 line-through' : ''">Lumayan, tapi agak molor jadwalnya 15 menit dari booking. Hasil potongan oke lah.</p>
-                <div class="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2 text-[12px] text-slate-500">
-                  <span>Serviced by <strong class="text-slate-700">Rendra Kusuma</strong></span>
-                </div>
+              <div x-show="isHidden" x-cloak class="absolute inset-0 bg-white/60 backdrop-blur-[1px] rounded-xl pointer-events-none flex items-center justify-center">
+                <span class="bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-[12px] font-bold">HIDDEN</span>
               </div>
             </div>
-            <div x-show="isHidden" x-cloak class="absolute inset-0 bg-white/60 backdrop-blur-[1px] rounded-xl pointer-events-none flex items-center justify-center">
-              <span class="bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-[12px] font-bold">HIDDEN</span>
+          @empty
+            <!-- Empty state -->
+            <div class="flex flex-col items-center justify-center p-12 text-center bg-white rounded-xl border border-border-light border-dashed">
+              <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                <span class="text-slate-300 text-2xl"><svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg></span>
+              </div>
+              <h3 class="text-[18px] font-semibold text-slate-900 mb-1">No reviews yet</h3>
+              <p class="text-[14px] text-slate-500">Customers haven't left any reviews for the selected filters.</p>
             </div>
-          </div>
-
-          <!-- Empty state -->
-          <div class="hidden flex-col items-center justify-center p-12 text-center bg-white rounded-xl border border-border-light border-dashed">
-            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-              <span class="text-slate-400 text-2xl"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>
-            </div>
-            <h3 class="text-[18px] font-semibold text-slate-900 mb-1">No reviews yet</h3>
-            <p class="text-[14px] text-slate-500">Customers haven't left any reviews for the selected filters.</p>
-          </div>
+          @endforelse
 
         </div>
 
       </main>
     </div>
   </div>
+  @include('partials.logout-modal')
 </body>
 </html>

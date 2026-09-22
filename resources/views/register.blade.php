@@ -63,19 +63,26 @@
         </header>
 
         <!-- Registration Form -->
-        <form class="flex flex-col gap-6" id="registerForm" action="{{ url('/onboarding-success') }}">
+        <form class="flex flex-col gap-6" id="registerForm" action="{{ route('register') }}" method="POST">
+          @csrf
           
           <div class="flex flex-col sm:flex-row gap-6">
             <!-- Nama Barbershop -->
             <div class="flex-1">
               <x-label for="barbershop_name" data-i18n="onboarding.barbershop_name_label">Barbershop Name</x-label>
-              <x-input type="text" id="barbershop_name" data-i18n-placeholder="onboarding.barbershop_name_placeholder" placeholder="e.g. The Noble Barber" required autocomplete="off" />
+              <x-input type="text" id="barbershop_name" name="barbershop_name" value="{{ old('barbershop_name') }}" data-i18n-placeholder="onboarding.barbershop_name_placeholder" placeholder="e.g. The Noble Barber" required autocomplete="off" />
+              @error('barbershop_name')
+                  <span class="text-red-500 text-sm">{{ $message }}</span>
+              @enderror
             </div>
 
             <!-- Nama Owner -->
             <div class="flex-1">
               <x-label for="owner_name" data-i18n="onboarding.owner_name_label">Owner Name</x-label>
-              <x-input type="text" id="owner_name" data-i18n-placeholder="onboarding.owner_name_placeholder" placeholder="e.g. John Doe" required autocomplete="off" />
+              <x-input type="text" id="owner_name" name="name" value="{{ old('name') }}" data-i18n-placeholder="onboarding.owner_name_placeholder" placeholder="e.g. John Doe" required autocomplete="off" />
+              @error('name')
+                  <span class="text-red-500 text-sm">{{ $message }}</span>
+              @enderror
             </div>
           </div>
 
@@ -83,7 +90,7 @@
           <div>
             <x-label for="subdomain" data-i18n="onboarding.subdomain_label">Studio Subdomain</x-label>
             <div class="flex items-center border border-border-medium rounded-sm bg-background transition-colors duration-200 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
-              <input type="text" id="subdomain" data-i18n-placeholder="login.subdomain_placeholder" class="w-full px-5 py-4 border-none bg-transparent text-primary text-base focus:outline-none focus:ring-0 placeholder:text-primary/40 rounded-l-sm" placeholder="e.g. thenoble" required autocomplete="off">
+              <input type="text" id="subdomain" name="subdomain" value="{{ old('subdomain') }}" data-i18n-placeholder="login.subdomain_placeholder" class="w-full px-5 py-4 border-none bg-transparent text-primary text-base focus:outline-none focus:ring-0 placeholder:text-primary/40 rounded-l-sm" placeholder="e.g. thenoble" required autocomplete="off">
               <span class="px-5 py-4 bg-surface text-primary/60 text-[0.95rem] border-l border-border-light rounded-r-sm whitespace-nowrap">.trimly.com</span>
             </div>
           </div>
@@ -92,13 +99,19 @@
             <!-- Email Bisnis -->
             <div class="flex-1">
               <x-label for="email" data-i18n="onboarding.email_label">Business Email</x-label>
-              <x-input type="email" id="email" data-i18n-placeholder="onboarding.email_placeholder" placeholder="hello@studio.com" required />
+              <x-input type="email" id="email" name="email" value="{{ old('email') }}" data-i18n-placeholder="onboarding.email_placeholder" placeholder="hello@studio.com" required />
+              @error('email')
+                  <span class="text-red-500 text-sm">{{ $message }}</span>
+              @enderror
             </div>
 
             <!-- WhatsApp -->
             <div class="flex-1">
               <x-label for="whatsapp" data-i18n="onboarding.phone_label">WhatsApp Number</x-label>
-              <x-input type="tel" id="whatsapp" data-i18n-placeholder="onboarding.phone_placeholder" placeholder="081234567890" required />
+              <x-input type="tel" id="whatsapp" name="phone_number" value="{{ old('phone_number') }}" data-i18n-placeholder="onboarding.phone_placeholder" placeholder="081234567890" required />
+              @error('phone_number')
+                  <span class="text-red-500 text-sm">{{ $message }}</span>
+              @enderror
             </div>
           </div>
 
@@ -106,7 +119,7 @@
           <div>
             <x-label for="password" data-i18n="onboarding.password_label">Admin Password</x-label>
             <div class="relative flex items-center">
-              <x-input type="password" id="password" class="pr-12" placeholder="••••••••" required />
+              <x-input type="password" id="password" name="password" class="pr-12" placeholder="••••••••" required />
               <button type="button" class="absolute right-4 text-primary/50 hover:text-primary transition-colors duration-200 flex items-center justify-center p-1" id="togglePassword" aria-label="Toggle password visibility">
                 <svg id="icon-eye" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -118,6 +131,9 @@
                 </svg>
               </button>
             </div>
+            @error('password')
+                <span class="text-red-500 text-sm">{{ $message }}</span>
+            @enderror
           </div>
 
           <!-- 14-Day Free Trial Banner -->
@@ -129,7 +145,7 @@
 
           <!-- Submit Button -->
           <div class="mt-4">
-             <x-button-primary fullWidth="true" size="large"><span data-i18n="register.submit_btn">Start My 14-Day Free Trial</span></x-button-primary>
+             <x-button-primary fullWidth="true" type="submit" size="large"><span data-i18n="register.submit_btn">Start My 14-Day Free Trial</span></x-button-primary>
              <p data-i18n="register.trial_subnote" class="text-xs text-primary/50 text-center mt-3">We'll ask you to choose a plan when your trial ends. Cancel anytime, no charge if you don't continue.</p>
           </div>
           

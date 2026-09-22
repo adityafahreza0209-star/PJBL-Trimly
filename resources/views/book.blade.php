@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Doctor Barber — Booking Portal</title>
+  <title>{{ $barbershop->name }} — Booking Portal</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,6 +18,7 @@
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="font-sans text-primary leading-relaxed bg-background antialiased">
+  <input type="hidden" id="barbershopId" value="{{ $barbershop->id }}">
 
   <div 
     class="w-full min-h-screen flex flex-col bg-background"
@@ -53,8 +55,18 @@
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
           </a>
           <div class="flex flex-col">
-            <h1 class="font-serif text-2xl lg:text-3xl font-semibold leading-tight text-primary">Doctor Barber<span class="text-accent">.</span></h1>
-            <p class="text-sm text-primary/70">Malang, Jawa Timur</p>
+            <h1 class="font-serif text-2xl lg:text-3xl font-semibold leading-tight text-primary">{{ $barbershop->name }}<span class="text-accent">.</span></h1>
+            <div class="flex flex-wrap items-center gap-2 text-sm text-primary/70 mt-0.5">
+              <span>{{ $barbershop->address ?? 'Lokasi belum diatur' }}</span>
+              @if(!empty($overallRating))
+                <span class="text-primary/40">&bull;</span>
+                <span class="inline-flex items-center gap-1 font-semibold text-slate-800">
+                  <svg class="w-3.5 h-3.5 text-amber-400 fill-current" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
+                  <span>{{ number_format($overallRating, 1) }}</span>
+                  <span class="text-xs text-slate-500 font-normal">({{ $overallReviewCount }} ulasan)</span>
+                </span>
+              @endif
+            </div>
           </div>
         </div>
         <x-button-outline id="btnOpenHistory" class="py-2 px-4 text-sm font-semibold rounded-md">Riwayat & Tiket</x-button-outline>
@@ -66,63 +78,65 @@
       <!-- Left Column: Booking Flow (8 cols) -->
       <main class="w-full lg:col-span-8">
 
-        <!-- Track Booking Header -->
-        <div class="flex justify-between items-center mb-8 pb-4 border-b border-border-light">
-          <h1 class="text-xl font-serif font-bold text-primary">CukurHub.</h1>
-          <button @click="showTrackModal = true" class="text-sm font-medium text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg shadow-sm transition-all cursor-pointer">
-            Cari Tiket / Riwayat
-          </button>
-        </div>
+
 
       <!-- Step 1: Capster & Service -->
       <section id="step1">
         <h2 class="font-serif text-2xl font-medium mb-6 text-primary">01. Select Capster</h2>
         
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          @forelse($capsters as $index => $capster)
+          @php
+            $capsterBio = !empty($capster->bio) ? $capster->bio : ('Silakan konsultasi gaya rambut dengan ' . $capster->user->name . '.');
+            $capsterSkills = (!empty($capster->skills) && is_array($capster->skills) && count($capster->skills) > 0) ? $capster->skills : ['Haircut', 'Consultation'];
+            $ratingAvg = $capster->reviews_avg_rating !== null ? round($capster->reviews_avg_rating, 1) : null;
+            $reviewsCount = $capster->reviews_count ?? 0;
+          @endphp
           <label class="cursor-pointer group">
-            <input type="radio" name="capster" value="Fajar Pratama" class="peer hidden" checked>
+            <input type="radio" name="capster" value="{{ $capster->id }}" data-name="{{ $capster->user->name }}" class="peer hidden" {{ $index === 0 ? 'checked' : '' }}>
             <div class="flex flex-col items-center p-6 border border-border-light rounded-md transition-colors bg-surface hover:border-slate-400 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary peer-checked:bg-primary/5 peer-checked:hover:border-primary peer-checked:hover:ring-primary relative">
-              <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center font-serif font-semibold text-xl mb-4 text-primary border border-gray-200">FP</div>
+              <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center font-serif font-semibold text-xl mb-3 text-primary border border-gray-200">{{ strtoupper(substr($capster->user->name, 0, 2)) }}</div>
               <div class="text-center">
-                <div class="font-bold">Fajar P.</div>
-                <div class="text-xs text-primary/70 mt-1">Master Barber</div>
+                <div class="font-bold">{{ $capster->user->name }}</div>
+                <div class="text-xs text-primary/70 mt-0.5">{{ $capster->specialization }}</div>
+                
+                <!-- Rating badge on card -->
+                <div class="mt-2 flex items-center justify-center gap-1 text-xs">
+                  @if($reviewsCount > 0 && $ratingAvg)
+                    <svg class="w-3.5 h-3.5 text-amber-400 fill-current shrink-0" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" /></svg>
+                    <span class="font-bold text-slate-800">{{ number_format($ratingAvg, 1) }}</span>
+                    <span class="text-slate-400 text-[11px]">({{ $reviewsCount }})</span>
+                  @else
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200/60">
+                      ★ Baru
+                    </span>
+                  @endif
+                </div>
               </div>
-              <button type="button" class="absolute top-2 right-2 p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-primary transition-colors" onclick="openCapsterProfile('Fajar P.', 'Master Barber', 'Fajar memiliki lebih dari 10 tahun pengalaman...', ['Skin Fade', 'Classic Pompadour', 'Hot Towel Shave'], 'FP', event)" aria-label="Lihat Profil">
+              <button type="button" 
+                      class="btn-capster-profile absolute top-2 right-2 p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-primary transition-colors cursor-pointer" 
+                      data-name="{{ $capster->user->name }}"
+                      data-role="{{ $capster->specialization }}"
+                      data-bio="{{ $capsterBio }}"
+                      data-skills='@json($capsterSkills)'
+                      data-avatar="{{ strtoupper(substr($capster->user->name, 0, 2)) }}"
+                      data-phone="{{ $capster->user->phone_number }}"
+                      data-rating="{{ $ratingAvg ? number_format($ratingAvg, 1) : '' }}"
+                      data-reviews-count="{{ $reviewsCount }}"
+                      onclick="handleOpenCapsterProfile(this, event)"
+                      aria-label="Lihat Profil">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
               </button>
             </div>
           </label>
+          @empty
+          <div class="col-span-2 text-sm text-slate-500 py-2">
+            Belum ada capster aktif yang tersedia.
+          </div>
+          @endforelse
           
           <label class="cursor-pointer group">
-            <input type="radio" name="capster" value="Aditya Wijaya" class="peer hidden">
-            <div class="flex flex-col items-center p-6 border border-border-light rounded-md transition-colors bg-surface hover:border-slate-400 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary peer-checked:bg-primary/5 peer-checked:hover:border-primary peer-checked:hover:ring-primary relative">
-              <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center font-serif font-semibold text-xl mb-4 text-primary border border-gray-200">AW</div>
-              <div class="text-center">
-                <div class="font-bold">Aditya W.</div>
-                <div class="text-xs text-primary/70 mt-1">Senior Stylist</div>
-              </div>
-              <button type="button" class="absolute top-2 right-2 p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-primary transition-colors" onclick="openCapsterProfile('Aditya W.', 'Senior Stylist', 'Gaya modern dan tekstur adalah keahlian Aditya.', ['French Crop', 'Mullet', 'Coloring'], 'AW', event)" aria-label="Lihat Profil">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-              </button>
-            </div>
-          </label>
-          
-          <label class="cursor-pointer group">
-            <input type="radio" name="capster" value="Rendra Kusuma" class="peer hidden">
-            <div class="flex flex-col items-center p-6 border border-border-light rounded-md transition-colors bg-surface hover:border-slate-400 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary peer-checked:bg-primary/5 peer-checked:hover:border-primary peer-checked:hover:ring-primary relative">
-              <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center font-serif font-semibold text-xl mb-4 text-primary border border-gray-200">RK</div>
-              <div class="text-center">
-                <div class="font-bold">Rendra K.</div>
-                <div class="text-xs text-primary/70 mt-1">Senior Stylist</div>
-              </div>
-              <button type="button" class="absolute top-2 right-2 p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-primary transition-colors" onclick="openCapsterProfile('Rendra K.', 'Senior Stylist', 'Ahli dalam menata rambut tipis menjadi lebih bervolume.', ['Beard Trimming', 'Executive Contour', 'Thin Hair'], 'RK', event)" aria-label="Lihat Profil">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-              </button>
-            </div>
-          </label>
-          
-          <label class="cursor-pointer group">
-            <input type="radio" name="capster" value="Any Available" class="peer hidden">
+            <input type="radio" name="capster" value="any" data-name="Any Available" class="peer hidden" {{ $capsters->isEmpty() ? 'checked' : '' }}>
             <div class="flex flex-col items-center p-6 border border-border-light rounded-md transition-colors bg-surface hover:border-slate-400 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary peer-checked:bg-primary/5 peer-checked:hover:border-primary peer-checked:hover:ring-primary">
               <div class="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center font-serif font-semibold text-xl mb-4 border border-border-light">?</div>
               <div class="text-center">
@@ -136,41 +150,30 @@
         <h2 class="font-serif text-2xl font-medium mb-6 mt-14 text-primary">02. Select Service</h2>
         
         <div class="flex flex-col gap-4">
+          @forelse($services as $index => $service)
           <label class="cursor-pointer">
-            <input type="radio" name="service" value="Cukur Reguler" data-price="25000" data-dp="10000" data-duration="30 MINS" class="peer hidden" checked>
+            <input type="radio" 
+                   name="service" 
+                   value="{{ $service->id }}" 
+                   data-price="{{ $service->price }}" 
+                   data-dp="{{ $service->dp_amount }}" 
+                   data-duration="{{ $service->duration_minutes }} MINS" 
+                   class="peer hidden" 
+                   {{ $index === 0 ? 'checked' : '' }}>
             <div class="flex justify-between items-start p-6 border border-border-light rounded-md transition-colors bg-surface hover:border-slate-400 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary peer-checked:bg-primary/5 peer-checked:hover:border-primary peer-checked:hover:ring-primary">
               <div>
-                <div class="font-bold text-lg mb-1 service-name">Cukur Reguler</div>
-                <div class="text-sm text-primary/70 mb-3 max-w-[90%]">Potong rambut rapi standar, styling dengan pomade.</div>
-                <x-badge variant="neutral" class="px-2.5 py-1 text-xs font-semibold">30 MINS • DP Rp 10.000</x-badge>
+                <div class="font-bold text-lg mb-1 service-name">{{ $service->name }}</div>
+                <div class="text-sm text-primary/70 mb-3 max-w-[90%]">{{ $service->description ?? 'Layanan perawatan dan pangkas rambut profesional.' }}</div>
+                <x-badge variant="neutral" class="px-2.5 py-1 text-xs font-semibold">{{ $service->duration_minutes }} MINS • DP Rp {{ number_format($service->dp_amount, 0, ',', '.') }}</x-badge>
               </div>
-              <div class="font-bold text-lg whitespace-nowrap">Rp 25.000</div>
+              <div class="font-bold text-lg whitespace-nowrap">Rp {{ number_format($service->price, 0, ',', '.') }}</div>
             </div>
           </label>
-
-          <label class="cursor-pointer">
-            <input type="radio" name="service" value="Cukur + Keramas + Pijat" data-price="35000" data-dp="15000" data-duration="45 MINS" class="peer hidden">
-            <div class="flex justify-between items-start p-6 border border-border-light rounded-md transition-colors bg-surface hover:border-slate-400 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary peer-checked:bg-primary/5 peer-checked:hover:border-primary peer-checked:hover:ring-primary">
-              <div>
-                <div class="font-bold text-lg mb-1 service-name">Cukur + Keramas + Pijat</div>
-                <div class="text-sm text-primary/70 mb-3 max-w-[90%]">Paket komplit: potong rambut, cuci rambut, dan pijat relaksasi ringan.</div>
-                <x-badge variant="neutral" class="px-2.5 py-1 text-xs font-semibold">45 MINS • DP Rp 15.000</x-badge>
-              </div>
-              <div class="font-bold text-lg whitespace-nowrap">Rp 35.000</div>
-            </div>
-          </label>
-
-          <label class="cursor-pointer">
-            <input type="radio" name="service" value="Trim Kumis & Jenggot" data-price="15000" data-dp="5000" data-duration="15 MINS" class="peer hidden">
-            <div class="flex justify-between items-start p-6 border border-border-light rounded-md transition-colors bg-surface hover:border-slate-400 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary peer-checked:bg-primary/5 peer-checked:hover:border-primary peer-checked:hover:ring-primary">
-              <div>
-                <div class="font-bold text-lg mb-1 service-name">Trim Kumis & Jenggot</div>
-                <div class="text-sm text-primary/70 mb-3 max-w-[90%]">Cukur dan rapikan area kumis serta jenggot.</div>
-                <x-badge variant="neutral" class="px-2.5 py-1 text-xs font-semibold">15 MINS • DP Rp 5.000</x-badge>
-              </div>
-              <div class="font-bold text-lg whitespace-nowrap">Rp 15.000</div>
-            </div>
-          </label>
+          @empty
+          <div class="text-sm text-slate-500 py-4">
+            Belum ada layanan aktif yang tersedia untuk barbershop ini.
+          </div>
+          @endforelse
         </div>
       </section>
 
@@ -197,11 +200,11 @@
         <div class="flex flex-col gap-5">
           <div class="flex flex-col gap-2">
             <x-label for="clientName" class="font-bold">Full Name</x-label>
-            <x-input type="text" id="clientName" placeholder="e.g. Arya Maulana" />
+            <x-input type="text" id="clientName" placeholder="e.g. Arya Maulana" value="{{ auth()->check() ? auth()->user()->name : '' }}" />
           </div>
           <div class="flex flex-col gap-2">
             <x-label for="clientPhone" class="font-bold">WhatsApp Number</x-label>
-            <x-input type="tel" id="clientPhone" placeholder="0812-XXXX-XXXX" />
+            <x-input type="tel" id="clientPhone" placeholder="0812-XXXX-XXXX" value="{{ auth()->check() ? auth()->user()->phone_number : '' }}" />
           </div>
         </div>
       </section>
@@ -221,12 +224,12 @@
             <div class="hidden lg:flex flex-col gap-6 mb-8 pb-8 border-b border-white/15">
               <div class="flex justify-between items-start">
                 <span class="text-sm text-white/70">Capster</span>
-                <span class="font-bold text-white" id="summCapster">Fajar P.</span>
+                <span class="font-bold text-white" id="summCapster">-</span>
               </div>
               <div class="flex justify-between items-start">
                 <span class="text-sm text-white/70">Service</span>
                 <div class="flex flex-col items-end">
-                  <span class="font-bold text-white" id="summService">Cukur Reguler</span>
+                  <span class="font-bold text-white" id="summService">-</span>
                   <span class="text-xs text-white/50 mt-1" id="summDuration">30 MINS</span>
                 </div>
               </div>
@@ -351,7 +354,7 @@
 
         <!-- Merchant & Amount Details -->
         <div class="text-center py-2 bg-slate-50/70 rounded-2xl border border-slate-100 p-4">
-          <div class="font-serif font-bold text-base text-primary">Doctor Barber</div>
+          <div class="font-serif font-bold text-base text-primary">{{ $barbershop->name }}</div>
           <div class="text-xs text-slate-500 mt-0.5">Ref: <span class="font-mono font-semibold text-primary">DOC-8899</span></div>
           <div class="text-3xl font-serif font-bold text-primary mt-2" id="modalDpAmount">Rp 10.000</div>
           <div class="text-[11px] text-slate-400 mt-1 uppercase tracking-wider font-medium">Down Payment (DP)</div>
@@ -452,20 +455,20 @@
 
       <!-- Sticky Modal Footer -->
       <div class="p-5 bg-slate-50 border-t border-border-subtle shrink-0">
-        <x-button-primary href="{{ url('/booking-success') }}" :fullWidth="true" class="py-3.5 text-sm rounded-xl font-semibold shadow-sm">
+        <button type="button" id="btnSimulateSuccess" class="w-full bg-primary hover:bg-[#c55b34] text-white py-3.5 text-sm rounded-xl font-semibold shadow-sm flex items-center justify-center transition-colors">
           Simulate Successful Payment
           <svg viewBox="0 0 24 24" class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
-        </x-button-primary>
+        </button>
       </div>
     </div>
   </div>
 
   <script src="{{ asset('js/portal.js') }}"></script>
   <!-- DRAWER: RIWAYAT & TIKET -->
-  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end justify-center opacity-0 pointer-events-none transition-opacity" id="drawerBookingHistory">
-    <div class="w-full max-w-lg bg-surface rounded-t-2xl transform translate-y-full transition-transform duration-300 flex flex-col max-h-[90vh]">
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity" id="drawerBookingHistory">
+    <div class="w-full max-w-lg bg-surface rounded-2xl transform translate-y-8 opacity-0 transition-all duration-300 flex flex-col max-h-[90vh]">
       <div class="p-6 border-b border-border-light flex justify-between items-center shrink-0">
         <h2 class="font-serif text-xl font-semibold text-primary m-0">Riwayat Booking Saya</h2>
         <button class="text-2xl text-primary hover:text-gray-600 leading-none" id="closeHistoryDrawer">&times;</button>
@@ -474,34 +477,14 @@
         <div class="mb-8">
           <x-label class="block mb-2 text-primary font-semibold text-sm">Nomor WhatsApp Terdaftar</x-label>
           <div class="flex gap-2">
-            <x-input type="tel" class="flex-1" placeholder="0812-XXXX-XXXX" />
-            <x-button-outline class="whitespace-nowrap px-4 text-sm font-semibold">Cari Booking</x-button-outline>
+            <x-input type="text" id="trackInput" class="flex-1" placeholder="Masukkan Nomor WA atau Kode TRM-..." />
+            <x-button-outline id="btnTrack" type="button" class="whitespace-nowrap px-4 text-sm font-semibold">Cari Booking</x-button-outline>
           </div>
         </div>
         
-        <div class="flex flex-col gap-4">
-          <!-- Upcoming -->
-          <div class="border border-border-light rounded-md overflow-hidden bg-surface">
-            <div class="bg-green-50 p-3 border-b border-border-light">
-              <x-badge class="bg-green-100 text-green-800 border-green-200">DP Paid / Confirmed</x-badge>
-            </div>
-            <div class="p-4">
-              <div class="font-bold text-base text-primary mb-1">Fajar Pratama • Gentleman's Fade</div>
-              <div class="text-sm text-gray-600 mb-4">Sat, 29 Aug 2026 - 14:00 WIB</div>
-              <a href="{{ url('ticket') }}" class="block w-full text-center rounded-md p-3 bg-primary hover:bg-[#c55b34] text-white font-semibold transition-colors">Buka E-Ticket Digital</a>
-            </div>
-          </div>
-          
-          <!-- Completed -->
-          <div class="border border-border-light rounded-md overflow-hidden bg-surface">
-            <div class="bg-gray-50 p-3 border-b border-border-light">
-              <x-badge class="bg-gray-200 text-gray-700">Completed</x-badge>
-            </div>
-            <div class="p-4">
-              <div class="font-bold text-base text-primary mb-1">Aditya Wijaya • Executive Fade</div>
-              <div class="text-sm text-gray-600 mb-4">Sat, 15 Aug 2026 - 10:00 WIB</div>
-              <a href="{{ url('ticket') }}" class="block w-full text-center rounded-md p-3 border border-primary text-primary font-semibold hover:bg-gray-50 transition-colors">Lihat Tiket & Beri Ulasan</a>
-            </div>
+        <div class="flex flex-col gap-4" id="historyResults">
+          <div class="text-center text-sm text-slate-500 py-8 border border-dashed border-border-light rounded-md">
+            Masukkan Nomor WhatsApp untuk melihat riwayat tiket Anda.
           </div>
         </div>
       </div>
@@ -515,8 +498,17 @@
       
       <div class="text-center mt-4">
         <div id="modalCapsterAvatar" class="w-20 h-20 rounded-full bg-primary text-white flex items-center justify-center text-3xl mx-auto mb-4 font-serif font-semibold">FP</div>
-        <h2 class="font-bold text-2xl mb-1 text-primary" id="modalCapsterName">Fajar P.</h2>
-        <p class="text-primary font-bold mb-5" id="modalCapsterRole">Master Barber</p>
+        <h2 class="font-bold text-2xl mb-1 text-primary" id="modalCapsterName">Nama Capster</h2>
+        <p class="text-primary font-bold mb-2 text-sm" id="modalCapsterRole">Master Barber</p>
+        
+        <!-- Rating in Modal -->
+        <div id="modalCapsterRatingContainer" class="flex items-center justify-center gap-1.5 mb-5">
+          <div class="flex items-center gap-0.5" id="modalCapsterStars">
+            <!-- Rendered via JS -->
+          </div>
+          <span class="text-sm font-bold text-slate-800" id="modalCapsterRatingScore">5.0</span>
+          <span class="text-xs text-slate-500" id="modalCapsterRatingCount">(0 ulasan)</span>
+        </div>
         
         <p id="modalCapsterBio" class="text-gray-600 text-sm leading-relaxed mb-6">
           Bio.
@@ -558,27 +550,89 @@
 </script>
 
 <script>
-  function openCapsterProfile(name, role, bio, skills, avatar, event) {
+  function handleOpenCapsterProfile(btn, event) {
     if(event) {
       event.preventDefault();
       event.stopPropagation();
     }
+    const name = btn.getAttribute('data-name') || '';
+    const role = btn.getAttribute('data-role') || '';
+    const bio = btn.getAttribute('data-bio') || '';
+    let skills = [];
+    try {
+      skills = JSON.parse(btn.getAttribute('data-skills') || '[]');
+    } catch (e) {
+      skills = [];
+    }
+    const avatar = btn.getAttribute('data-avatar') || '';
+    const phone = btn.getAttribute('data-phone') || '';
+    const rating = btn.getAttribute('data-rating') || '';
+    const reviewsCount = parseInt(btn.getAttribute('data-reviews-count') || '0');
+    openCapsterProfile(name, role, bio, skills, avatar, phone, rating, reviewsCount, event);
+  }
+
+  function openCapsterProfile(name, role, bio, skills, avatar, phone, rating, reviewsCount, event) {
+    if(event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    let bioHtml = (bio || '').replace(/\n/g, '<br>');
+    if (phone) { 
+      bioHtml = bioHtml + '<br><br><b>Kontak:</b> ' + phone; 
+    }
     document.getElementById('modalCapsterName').textContent = name;
     document.getElementById('modalCapsterRole').textContent = role;
-    document.getElementById('modalCapsterBio').textContent = bio;
+    document.getElementById('modalCapsterBio').innerHTML = bioHtml;
     document.getElementById('modalCapsterAvatar').textContent = avatar;
+
+    // Rating in Modal
+    const starsContainer = document.getElementById('modalCapsterStars');
+    const scoreEl = document.getElementById('modalCapsterRatingScore');
+    const countEl = document.getElementById('modalCapsterRatingCount');
+    
+    if (starsContainer && scoreEl && countEl) {
+      starsContainer.innerHTML = '';
+      if (reviewsCount > 0 && rating) {
+        const numericRating = Math.round(parseFloat(rating));
+        for (let i = 1; i <= 5; i++) {
+          const starSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          starSvg.setAttribute('viewBox', '0 0 24 24');
+          starSvg.setAttribute('fill', 'currentColor');
+          starSvg.setAttribute('class', `w-4 h-4 ${i <= numericRating ? 'text-amber-400' : 'text-slate-200'}`);
+          starSvg.innerHTML = '<path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />';
+          starsContainer.appendChild(starSvg);
+        }
+        scoreEl.textContent = rating;
+        scoreEl.classList.remove('hidden');
+        countEl.textContent = `(${reviewsCount} ulasan)`;
+      } else {
+        starsContainer.innerHTML = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">★ Capster Baru</span>';
+        scoreEl.classList.add('hidden');
+        countEl.textContent = '(Belum ada ulasan)';
+      }
+    }
     
     const skillsContainer = document.getElementById('modalCapsterSkills');
     skillsContainer.innerHTML = '';
-    skills.forEach(skill => {
+    if (Array.isArray(skills) && skills.length > 0) {
+      skills.forEach(skill => {
+        const span = document.createElement('span');
+        span.textContent = skill;
+        span.className = 'bg-gray-100 text-primary px-3 py-1.5 rounded-full text-xs font-semibold border border-gray-200';
+        skillsContainer.appendChild(span);
+      });
+    } else {
       const span = document.createElement('span');
-      span.textContent = skill;
+      span.textContent = 'General Styling';
       span.className = 'bg-gray-100 text-primary px-3 py-1.5 rounded-full text-xs font-semibold border border-gray-200';
       skillsContainer.appendChild(span);
-    });
+    }
     
     document.getElementById('capsterProfileModal').classList.remove('opacity-0', 'pointer-events-none');
   }
+
+  window.handleOpenCapsterProfile = handleOpenCapsterProfile;
+  window.openCapsterProfile = openCapsterProfile;
 
   document.addEventListener('DOMContentLoaded', function() {
     const capsterModal = document.getElementById('capsterProfileModal');
@@ -598,11 +652,6 @@
       });
     }
 
-    const btnSimulateSuccess = document.getElementById('btnSimulateSuccess');
-    if (btnSimulateSuccess) {
-      btnSimulateSuccess.addEventListener('click', function() {
-        window.location.href = '{{ url('/ticket') }}';
-      });
-    }
+
   });
 </script>

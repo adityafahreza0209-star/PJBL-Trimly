@@ -66,7 +66,7 @@
         </div>
         <div class="flex items-center gap-4">
           
-          <x-button-outline size="normal" href="{{ url('login') }}" class="max-sm:text-xs max-sm:px-3">Sign Out</x-button-outline>
+          <x-button-outline type="button" size="normal" class="max-sm:text-xs max-sm:px-3" onclick="window.dispatchEvent(new CustomEvent('open-logout-modal'))">Sign Out</x-button-outline>
         </div>
       </header>
 
@@ -82,34 +82,58 @@
             <div class="bg-white shadow-sm border border-border-subtle rounded-2xl p-6 flex flex-col gap-6">
               <!-- Avatar row -->
               <div class="flex items-center gap-5 pb-6 border-b border-border-light max-sm:flex-col max-sm:items-start">
-                <div class="w-16 h-16 rounded-full bg-primary/10 text-primary font-bold border border-primary/20 font-display text-3xl grid place-items-center shrink-0">A</div>
+                <div class="w-16 h-16 rounded-full bg-primary/10 text-primary font-bold border border-primary/20 font-display text-3xl grid place-items-center shrink-0">
+                  {{ strtoupper(substr($user->name, 0, 1)) }}
+                </div>
                 <div class="flex-1">
-                  <h3 class="m-0 mb-0.5 text-base font-semibold text-slate-900">Admin User</h3>
-                  <p class="m-0 text-slate-500 text-xs">Super Administrator &bull; The Noble Barber</p>
+                  <h3 class="m-0 mb-0.5 text-base font-semibold text-slate-900">{{ $user->name }}</h3>
+                  <p class="m-0 text-slate-500 text-xs">Administrator &bull; {{ $barbershop->name ?? 'Trimly Barbershop' }}</p>
                 </div>
                 <button type="button" class="px-4 py-2 text-xs font-semibold rounded-lg border border-border-subtle text-slate-700 hover:bg-surface transition-colors cursor-pointer">Upload New</button>
               </div>
 
               <!-- Form fields -->
-              <div class="flex flex-col gap-4">
-                <div class="flex flex-col gap-1.5">
-                  <x-label>Full Name</x-label>
-                  <x-input type="text" value="Admin User" />
-                </div>
-                <div class="flex flex-col gap-1.5">
-                  <x-label>Email Address</x-label>
-                  <x-input type="email" value="admin@noblebarber.id" />
-                </div>
-                <div class="flex flex-col gap-1.5">
-                  <x-label>Phone Number</x-label>
-                  <x-input type="tel" value="0812-9999-8888" />
-                </div>
-              </div>
+              <form method="POST" action="{{ route('admin.account.updateProfile') }}" class="flex flex-col gap-6">
+                @csrf
 
-              <!-- Right-aligned action -->
-              <div class="flex justify-end pt-2 border-t border-border-light">
-                <x-button-primary size="normal">Save Changes</x-button-primary>
-              </div>
+                @if(session('status'))
+                  <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium">
+                    {{ session('status') }}
+                  </div>
+                @endif
+
+                @if(isset($errors) && $errors->hasAny(['name', 'email', 'phone_number']))
+                  <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm">
+                    <ul class="list-disc list-inside space-y-1">
+                      @foreach(['name', 'email', 'phone_number'] as $field)
+                        @error($field)
+                          <li>{{ $message }}</li>
+                        @enderror
+                      @endforeach
+                    </ul>
+                  </div>
+                @endif
+
+                <div class="flex flex-col gap-4">
+                  <div class="flex flex-col gap-1.5">
+                    <x-label>Full Name</x-label>
+                    <x-input type="text" name="name" value="{{ old('name', $user->name) }}" required />
+                  </div>
+                  <div class="flex flex-col gap-1.5">
+                    <x-label>Email Address</x-label>
+                    <x-input type="email" name="email" value="{{ old('email', $user->email) }}" />
+                  </div>
+                  <div class="flex flex-col gap-1.5">
+                    <x-label>Phone Number</x-label>
+                    <x-input type="tel" name="phone_number" value="{{ old('phone_number', $user->phone_number) }}" required />
+                  </div>
+                </div>
+
+                <!-- Right-aligned action -->
+                <div class="flex justify-end pt-2 border-t border-border-light">
+                  <x-button-primary type="submit" size="normal">Save Changes</x-button-primary>
+                </div>
+              </form>
             </div>
           </div>
         </section>
@@ -121,26 +145,47 @@
             <p class="text-xs text-slate-500 leading-relaxed m-0">Ensure your account is using a long, random password to stay secure.</p>
           </div>
           <div class="md:col-span-2">
-            <div class="bg-white shadow-sm border border-border-subtle rounded-2xl p-6 flex flex-col gap-4">
+            <form method="POST" action="{{ route('admin.account.updatePassword') }}" class="bg-white shadow-sm border border-border-subtle rounded-2xl p-6 flex flex-col gap-4">
+              @csrf
+
+              @if(session('password_status'))
+                <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium">
+                  {{ session('password_status') }}
+                </div>
+              @endif
+
+              @if(isset($errors) && $errors->hasAny(['current_password', 'new_password']))
+                <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm">
+                  <ul class="list-disc list-inside space-y-1">
+                    @error('current_password')
+                      <li>{{ $message }}</li>
+                    @enderror
+                    @error('new_password')
+                      <li>{{ $message }}</li>
+                    @enderror
+                  </ul>
+                </div>
+              @endif
+
               <div class="flex flex-col gap-1.5">
                 <x-label>Current Password / PIN</x-label>
-                <x-input type="password" placeholder="Enter current password" />
+                <x-input type="password" name="current_password" placeholder="Enter current password" />
               </div>
               <div class="flex flex-col gap-1.5">
                 <x-label>New Password</x-label>
-                <x-input type="password" placeholder="New password" x-model="newPassword" />
+                <x-input type="password" name="new_password" placeholder="New password" x-model="newPassword" required />
               </div>
               <div class="flex flex-col gap-1.5">
                 <x-label>Confirm New Password</x-label>
-                <x-input type="password" placeholder="Confirm new password" x-model="confirmPassword" />
+                <x-input type="password" name="new_password_confirmation" placeholder="Confirm new password" x-model="confirmPassword" required />
                 <p x-show="newPassword !== '' && confirmPassword !== '' && newPassword !== confirmPassword" x-cloak class="text-xs text-rose-500 mt-1 m-0">Passwords do not match.</p>
               </div>
 
               <!-- Right-aligned action -->
               <div class="flex justify-end pt-3 border-t border-border-light">
-                <x-button-primary size="normal" x-bind:disabled="newPassword !== confirmPassword || newPassword === ''" class="disabled:opacity-50 disabled:cursor-not-allowed">Update Security</x-button-primary>
+                <x-button-primary type="submit" size="normal" x-bind:disabled="newPassword !== confirmPassword || newPassword === ''" class="disabled:opacity-50 disabled:cursor-not-allowed">Update Security</x-button-primary>
               </div>
-            </div>
+            </form>
           </div>
         </section>
 
@@ -187,17 +232,39 @@
           </div>
           <div class="md:col-span-2 flex flex-col gap-6">
             
+            @php
+              $planMap = [
+                'essential' => ['name' => 'Essential Plan', 'price' => 'Rp 239.000'],
+                'architect' => ['name' => 'Architect Plan', 'price' => 'Rp 559.000'],
+              ];
+              $currentPlan = $planMap[$barbershop->paket_dipilih ?? ''] ?? ['name' => 'No Active Plan', 'price' => 'Rp 0'];
+              $subStatus = $barbershop->subscription_status ?? 'trial';
+            @endphp
             <!-- Current Plan Card -->
             <div class="bg-primary text-white rounded-2xl p-6 relative overflow-hidden shadow-sm">
               <div class="absolute -right-10 -top-10 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
               <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div>
                   <div class="flex items-center gap-3 mb-2">
-                    <h3 class="m-0 text-xl font-bold">Architect Plan</h3>
-                    <span class="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Active</span>
+                    <h3 class="m-0 text-xl font-bold">{{ $currentPlan['name'] }}</h3>
+                    @if($subStatus === 'aktif')
+                      <span class="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Active</span>
+                    @elseif($subStatus === 'trial')
+                      <span class="bg-amber-400 text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Trial</span>
+                    @else
+                      <span class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Inactive</span>
+                    @endif
                   </div>
-                  <div class="text-[28px] font-bold mb-1">Rp 699.000<span class="text-sm font-normal text-white/70">/mo</span></div>
-                  <p class="m-0 text-sm text-white/80">Next renewal on 15 Oct 2026</p>
+                  <div class="text-[28px] font-bold mb-1">{{ $currentPlan['price'] }}<span class="text-sm font-normal text-white/70">/mo</span></div>
+                  <p class="m-0 text-sm text-white/80">
+                    @if($subStatus === 'trial')
+                      Trial ends on {{ $barbershop && $barbershop->trial_berakhir_pada ? \Carbon\Carbon::parse($barbershop->trial_berakhir_pada)->format('d M Y') : 'N/A' }}
+                    @elseif($subStatus === 'aktif')
+                      Active subscription
+                    @else
+                      Subscription inactive
+                    @endif
+                  </p>
                 </div>
                 <div class="flex flex-col gap-2 w-full sm:w-auto">
                   <button type="button" class="w-full sm:w-auto bg-white text-primary hover:bg-slate-50 font-semibold text-sm py-2 px-4 rounded-lg cursor-pointer transition-colors shadow-sm">Upgrade Plan</button>
@@ -215,14 +282,14 @@
                 <div class="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
                   <div>
                     <div class="text-[14px] font-semibold text-slate-900">15 Sep 2026</div>
-                    <div class="text-xs text-slate-500 mt-0.5">Rp 699.000 &bull; <span class="text-emerald-600 font-semibold">Paid</span></div>
+                    <div class="text-xs text-slate-500 mt-0.5">Rp 559.000 &bull; <span class="text-emerald-600 font-semibold">Paid</span></div>
                   </div>
                   <button type="button" class="text-sm font-semibold text-primary hover:text-accent bg-transparent border-0 cursor-pointer transition-colors">Download PDF</button>
                 </div>
                 <div class="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
                   <div>
                     <div class="text-[14px] font-semibold text-slate-900">15 Aug 2026</div>
-                    <div class="text-xs text-slate-500 mt-0.5">Rp 699.000 &bull; <span class="text-emerald-600 font-semibold">Paid</span></div>
+                    <div class="text-xs text-slate-500 mt-0.5">Rp 559.000 &bull; <span class="text-emerald-600 font-semibold">Paid</span></div>
                   </div>
                   <button type="button" class="text-sm font-semibold text-primary hover:text-accent bg-transparent border-0 cursor-pointer transition-colors">Download PDF</button>
                 </div>
@@ -254,5 +321,6 @@
       </main>
     </div>
   </div>
+  @include('partials.logout-modal')
 </body>
 </html>

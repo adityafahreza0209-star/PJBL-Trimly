@@ -35,9 +35,16 @@
         Terminal Initialized Successfully
       </h1>
 
+      @php
+        $isEssential = ($barbershop->paket_dipilih ?? '') === 'essential';
+        $planName = $isEssential ? 'Essential' : 'Architect';
+        $planBadge = $isEssential ? 'Starter Tier' : 'Pro Tier';
+        $planPrice = $isEssential ? 'Rp 239.000' : 'Rp 559.000';
+      @endphp
+
       <!-- Description -->
       <p class="text-sm text-gray-500 leading-relaxed max-w-sm mx-auto mb-6">
-        Your Trimly workspace for <strong class="text-primary font-semibold">"The Noble Barber"</strong> has been created and is ready for deployment.
+        Your Trimly workspace for <strong class="text-primary font-semibold">"{{ $barbershop->name }}"</strong> has been created and is ready for deployment.
       </p>
 
       <!-- Next Steps / Payment Mockup Box -->
@@ -46,12 +53,12 @@
           <div>
             <span class="text-[11px] uppercase tracking-wider font-semibold text-gray-400 block mb-0.5">Selected Plan</span>
             <span class="text-sm font-bold text-primary flex items-center gap-2">
-              Architect
-              <span class="text-[10px] font-semibold bg-accent/10 text-accent px-2 py-0.5 rounded-full">Pro Tier</span>
+              {{ $planName }}
+              <span class="text-[10px] font-semibold bg-accent/10 text-accent px-2 py-0.5 rounded-full">{{ $planBadge }}</span>
             </span>
           </div>
           <div class="text-right">
-            <span class="text-base font-bold text-primary">Rp 699.000</span>
+            <span class="text-base font-bold text-primary">{{ $planPrice }}</span>
             <span class="text-xs text-gray-500 font-normal block">/ mo</span>
           </div>
         </div>
@@ -62,7 +69,11 @@
             <line x1="12" y1="16" x2="12" y2="12"></line>
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
           </svg>
-          <span>You are currently on a <strong class="text-gray-700">14-day free trial</strong>. Your free trial ends on <strong class="text-primary">{{ \Carbon\Carbon::now()->addDays(14)->format('F j, Y') }}</strong>. No payment is required today.</span>
+          @if (($barbershop->subscription_status ?? '') === 'trial')
+            <span>You are currently on a <strong class="text-gray-700">14-day free trial</strong>. Your free trial ends on <strong class="text-primary">{{ $barbershop->trial_berakhir_pada ? $barbershop->trial_berakhir_pada->format('F j, Y') : '-' }}</strong>. No payment is required today.</span>
+          @else
+            <span>Your subscription is now active.</span>
+          @endif
         </div>
       </div>
 
